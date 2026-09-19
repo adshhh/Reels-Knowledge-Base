@@ -1,0 +1,45 @@
+# Personal data derived from the archive — NEVER committed (repo is public)
+data/
+records/
+corrections.jsonl
+curation.jsonl
+*.db
+*.mp4
+*.npy
+
+# Environment / tooling — local to this machine, never committed
+.venv/
+.cache/
+.envrc
+.direnv/
+
+# Starter kit source copy — its contents get installed into the repo root,
+# the kit folder itself is not part of this project
+claude-starter-kit/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local agent state and tooling — kept on this machine only (owner's choice)
+.claude/
+.githooks/
