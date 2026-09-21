@@ -27,8 +27,17 @@ ALLOW_MODELS = os.environ.get("REELKB_ALLOW_MODELS") == "1"
 BLOCKED_MODULES = (
     "torch", "torchaudio", "mlx", "mlx_whisper", "onnxruntime", "silero_vad", "ocrmac",
     "FlagEmbedding", "transformers", "sentence_transformers", "sklearn",
-    "groq", "apify_client", "google.genai", "yt_dlp",
+    "groq", "apify_client", "google", "yt_dlp",
 )  # fmt: skip
+# "google", not "google.genai": google-genai's package is *named* "google.genai" but its
+# top-level "google" namespace package is a separate, separately-installed distribution.
+# Blocking only "google.genai" works when both are present (this machine, with the
+# `pipeline` extra installed) -- Python resolves "google" first, our finder lets it through,
+# then catches "google.genai". On a lightweight install (CI: only ".[dev]"), "google" itself
+# isn't installed, so resolving it raises ModuleNotFoundError before we ever get a chance to
+# block "google.genai" -- the guard never fires, and the test that exists to prove it fires
+# (test_guards.py) fails with the wrong exception instead. Caught by the first real CI run,
+# not by this suite (CI installs the light deps this suite always had; nothing here changed).
 
 
 class NetworkBlocked(RuntimeError):
