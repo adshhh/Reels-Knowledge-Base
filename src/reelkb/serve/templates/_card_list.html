@@ -1,0 +1,40 @@
+{# Reusable card list: expects `cards` (list[Card]) in context. Used by category, search
+   and hidden pages. No thumbnails (D11). #}
+{% if cards %}
+<ul class="cards">
+  {% for card in cards %}
+  <li class="card">
+    <a class="card-title" href="/item/{{ card.item_id }}">{{ card.title }}</a>
+    <p class="summary">{{ card.summary }}</p>
+    <div class="meta">
+      <span>{{ card.source_account or "unknown account" }}</span>
+      <span>&middot;</span>
+      <span>{{ card.sent_at[:10] }}</span>
+      {% if card.url %}
+      <span>&middot;</span>
+      <a class="instagram-link" href="{{ card.url }}" target="_blank" rel="noopener">Open original &rarr;</a>
+      {% endif %}
+      {% if card.category_name and show_category|default(false) %}
+      <span>&middot;</span>
+      <span>{{ card.category_name }}</span>
+      {% endif %}
+    </div>
+    {% if card.language and card.language not in ("en", "en-US") or card.unreadable_text or card.lyric_like %}
+    <div class="tags">
+      {% if card.language and card.language not in ("en", "en-US") %}
+      <span class="tag">{{ card.language }}</span>
+      {% endif %}
+      {% if card.unreadable_text %}
+      <span class="tag warn">unreadable text</span>
+      {% endif %}
+      {% if card.lyric_like %}
+      <span class="tag warn">lyrics?</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty-state">Nothing here.</p>
+{% endif %}

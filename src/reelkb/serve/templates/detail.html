@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ card.title }} · Reel Knowledge Base{% endblock %}
+{% block content %}
+{% if is_hidden %}
+<p class="tag warn">This item is hidden. It only shows here and on the hidden-items page.</p>
+{% endif %}
+
+<h1>{{ card.title }}</h1>
+<div class="meta">
+  <span>{{ card.source_account or "unknown account" }}</span>
+  <span>&middot;</span>
+  <span>{{ card.sent_at[:10] }}</span>
+  {% if card.url %}
+  <span>&middot;</span>
+  <a class="instagram-link" href="{{ card.url }}" target="_blank" rel="noopener">Open original &rarr;</a>
+  {% endif %}
+  {% if card.category_name %}
+  <span>&middot;</span>
+  <a href="/category/{{ card.category_id }}">{{ card.category_name }}</a>
+  {% endif %}
+</div>
+
+{% if card.language and card.language not in ("en", "en-US") or card.unreadable_text or card.lyric_like or card.unverified_names %}
+<div class="tags">
+  {% if card.language and card.language not in ("en", "en-US") %}
+  <span class="tag">{{ card.language }}</span>
+  {% endif %}
+  {% if card.unreadable_text %}
+  <span class="tag warn">unreadable text</span>
+  {% endif %}
+  {% if card.lyric_like %}
+  <span class="tag warn">lyrics?</span>
+  {% endif %}
+  {% if card.unverified_names %}
+  <span class="tag warn" title="Not confirmed by on-screen text: {{ card.unverified_names|join(', ') }}">{{ card.unverified_names|length }} unverified name{{ "s" if card.unverified_names|length != 1 else "" }}</span>
+  {% endif %}
+</div>
+{% endif %}
+
+<p class="summary">{{ card.summary }}</p>
+
+{% if card.bullets %}
+<ul class="bullets">
+  {% for bullet in card.bullets %}
+  <li>{{ bullet }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% for label, text in card.channels() %}
+<div class="channel">
+  <h3>{{ label }}</h3>
+  <div class="text">{{ text }}</div>
+</div>
+{% endfor %}
+
+<div class="actions">
+  <details>
+    <summary>Edit title / summary</summary>
+    <form method="post" action="/item/{{ card.item_id }}/edit">
+      <div class="field">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" value="{{ card.title }}" required>
+      </div>
+      <div class="field">
+        <label for="summary">Summary</label>
+        <textarea id="summary" name="summary" rows="3" required>{{ card.summary }}</textarea>
+      </div>
+      <button type="submit" class="primary">Save</button>
+    </form>
+  </details>
+
+  <details>
+    <summary>Change category</summary>
+    <form method="post" action="/item/{{ card.item_id }}/category">
+      <div class="field">
+        <label for="category_id">Category</label>
+        <select id="category_id" name="category_id">
+          {% for cat in categories %}
+          <option value="{{ cat.category_id }}" {% if cat.category_id == card.category_id %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="primary">Save</button>
+    </form>
+  </details>
+
+  <details>
+    <summary>{{ "Unhide" if is_hidden else "Hide" }}</summary>
+    <form method="post" action="/item/{{ card.item_id }}/{{ 'unhide' if is_hidden else 'hide' }}">
+      <p class="muted">
+        {% if is_hidden %}
+        Bring this item back into feeds and search.
+        {% else %}
+        Removes this from every feed, search result and category count. Permanent, but not
+        destroyed -- the record stays, marked hidden.
+        {% endif %}
+      </p>
+      <button type="submit" class="{{ '' if is_hidden else 'danger' }}">
+        {{ "Unhide this item" if is_hidden else "Hide this item" }}
+      </button>
+    </form>
+  </details>
+</div>
+{% endblock %}

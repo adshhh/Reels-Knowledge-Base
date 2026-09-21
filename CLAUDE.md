@@ -26,6 +26,32 @@ component is responsible for, how components talk to each other, what data moves
 them, and why the structure was chosen. **Favour the big picture over line-by-line detail**
 unless the owner asks for the detail specifically.
 
+### How to explain a bug or a fix
+
+Never report a finding before the owner knows what the thing it lives in *is*. A list of
+defects in files he has not been introduced to is unreadable, however accurate it is.
+
+Use this order, every time:
+
+1. **The map first.** Name the subsystem, what job it does, and the handful of files it is
+   made of — a small table of file → responsibility. Show how data moves between them (a
+   plain-text arrow diagram is usually enough). Do this even when it feels redundant.
+2. **Define the jargon at the moment it first appears** — "holdout", "RRF", "nDCG", "salt".
+   One sentence in plain words, not a link.
+3. **Then the bug**, in that frame: which file, what it did, what it *should* do, and **why
+   it matters to this project specifically** — not defect-report language.
+4. **Then the fix**, and how it is proven. A measured before/after number beats any
+   description of the change.
+5. **Then what it costs the owner**, if anything: a decision he now has to make, a habit he
+   has to adopt (a backup, an order of operations), or a risk he is accepting.
+
+Severity is about consequence to *him* — hours of his labelling destroyed, a wrong number he
+would act on, a link that sends him somewhere the reel never pointed. Not about code
+aesthetics. Lead with the worst one and say plainly that it is the worst.
+
+Be clear and concise: no filler, no restating the finding three ways. Concise means fewer
+words per point, never fewer points — completeness is not what gets cut.
+
 ## Milestone workflow
 
 Work is organized into **12 build milestones (M0–M11)** — see the Build milestones table in
@@ -76,5 +102,6 @@ Decide independently: naming, file structure, small visual details — note thes
 checkpoint. Stop and ask: anything that changes a locked decision in `docs/PLAN.md`, adds
 scope, adds a dependency, or affects how the product looks or feels.
 
-<!-- Longer than the kit's 50-line guidance, by the width of the "Who you are writing for"
-     section. That section is an explicit owner instruction and outranks the guideline. -->
+<!-- No length limit. The owner has removed the kit's 50-line guidance explicitly: this file
+     may be as long as it needs to be. Keep it dense and current rather than short — but
+     everything in it must still earn its place, because it is read on every single turn. -->

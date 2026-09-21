@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Holdout {{ n }}/{{ total }} — Reel KB labelling{% endblock %}
+{% block content %}
+<div class="progress-wrap" aria-label="progress">
+  <div class="progress-label">{{ answered }} / {{ total }} labelled</div>
+  <div class="progress-bar"><div class="progress-fill" style="width: {{ (answered / total * 100) | round(1) }}%"></div></div>
+</div>
+
+<div class="nav-row">
+  {% if has_prev %}<a id="back-link" class="nav-link" href="/holdout/{{ n - 1 }}">&larr; Back</a>{% else %}<span></span>{% endif %}
+  <span class="position">Card {{ n }} of {{ total }}</span>
+  {% if has_next %}<a id="next-link" class="nav-link" href="/holdout/{{ n + 1 }}">Next &rarr;</a>{% else %}<span></span>{% endif %}
+</div>
+
+<a class="ig-link" href="{{ card.url }}" target="_blank" rel="noopener">Open on Instagram &#8599;</a>
+
+{% if card.unreadable_text or card.lyric_like %}
+<div class="flags">
+  {% if card.unreadable_text %}<span class="flag">on-screen text seen but unreadable</span>{% endif %}
+  {% if card.lyric_like %}<span class="flag">speech may be song lyrics</span>{% endif %}
+</div>
+{% endif %}
+
+<section class="evidence">
+  {% for label, text in card.channels() %}
+  <div class="channel">
+    <div class="channel-label">{{ label }}</div>
+    <div class="channel-text">{{ text }}</div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="models-guess">
+  <div class="models-guess-label">Model's guess (may be wrong) &mdash; not the category, just title/summary</div>
+  <div class="models-guess-title">{{ card.title }}</div>
+  <div class="models-guess-summary">{{ card.summary }}</div>
+</section>
+
+<form method="post" action="/holdout/{{ n }}" class="category-form">
+  <div class="category-grid">
+    {% for cat in categories %}
+    <button
+      type="submit"
+      name="category_id"
+      value="{{ cat.category_id }}"
+      class="cat-btn{% if cat.category_id == your_answer %} your-answer{% endif %}"
+      {% if loop.index <= 9 %}data-key="{{ loop.index }}"{% endif %}
+    >
+      {% if loop.index <= 9 %}<span class="key-hint">{{ loop.index }}</span>{% endif %}
+      {{ cat.name }}
+      {% if cat.category_id == your_answer %}<span class="your-answer-mark">&#10003; your answer</span>{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+</form>
+
+<a id="skip-link" class="skip-link" href="/holdout/{{ n + 1 if has_next else n }}">Skip (key: 0)</a>
+{% endblock %}

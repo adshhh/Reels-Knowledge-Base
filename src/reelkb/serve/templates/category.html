@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ category_name }} · Reel Knowledge Base{% endblock %}
+{% block content %}
+<h1>{{ category_name }} <span class="muted">({{ cards|length }})</span></h1>
+{% include "_card_list.html" %}
+{% endblock %}

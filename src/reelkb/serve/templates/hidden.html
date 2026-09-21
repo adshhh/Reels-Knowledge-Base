@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Hidden items · Reel Knowledge Base{% endblock %}
+{% block content %}
+<h1>Hidden items</h1>
+<p class="muted">Hidden from every feed, search result and category count. Unhide to bring one back.</p>
+{% if cards %}
+<ul class="cards">
+  {% for card in cards %}
+  <li class="card">
+    <a class="card-title" href="/item/{{ card.item_id }}">{{ card.title }}</a>
+    <p class="summary">{{ card.summary }}</p>
+    <div class="meta">
+      <span>{{ card.source_account or "unknown account" }}</span>
+      <span>&middot;</span>
+      <span>{{ card.sent_at[:10] }}</span>
+      {% if card.url %}
+      <span>&middot;</span>
+      <a class="instagram-link" href="{{ card.url }}" target="_blank" rel="noopener">Open original &rarr;</a>
+      {% endif %}
+    </div>
+    <form method="post" action="/item/{{ card.item_id }}/unhide" style="margin-top:10px;">
+      <button type="submit">Unhide</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty-state">Nothing hidden.</p>
+{% endif %}
+{% endblock %}

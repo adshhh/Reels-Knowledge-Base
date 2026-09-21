@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Queries — Reel KB labelling{% endblock %}
+{% block content %}
+<h1>Query judging</h1>
+<p class="hint">Type a query you'd actually search for. You'll grade the top results next.</p>
+
+<form method="post" action="/queries" class="new-query-form">
+  <input type="text" name="query" placeholder="e.g. free course to learn LLMs" required autofocus>
+  <button type="submit">Add query</button>
+</form>
+
+<h2>{{ records | length }} queries so far</h2>
+<ul class="query-list">
+  {% for r in records %}
+  <li>
+    <a href="/queries/{{ r.qid }}">{{ r.query }}</a>
+    <span class="query-meta">{{ r.judgements | length }} judged{% if r.canary %} &middot; canary{% endif %}</span>
+  </li>
+  {% else %}
+  <li class="empty">No queries yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

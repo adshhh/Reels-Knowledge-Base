@@ -98,8 +98,9 @@ on-screen text. They are still found through the caption, the speech transcript 
 
 ## 4. Parallel build in waves, reviewed in batches (changes "How the build actually runs")
 
-**The situation.** The owner wants v1 in about a week and has Fable 5.1 credit expiring
-within a day. The plan's loop builds one milestone at a time, and the owner reviews each
+**The situation.** The owner wants v1 in about a week. (The Fable 5.1 credit that first
+motivated this turned out to have already expired; the subagents run on Sonnet instead. The
+reasoning below doesn't depend on which model builds.) The plan's loop builds one milestone at a time, and the owner reviews each
 before the next starts.
 
 **Options considered.**
@@ -160,3 +161,136 @@ search results for 50 queries. That is the project's critical path (~5 hours).
 corrupt the fixtures. It only writes the files; the owner still makes every judgement, so §7's
 "not AI-generated" rule holds. **What was given up:** a little build time spent on a tool the
 product doesn't ship, plus one more thing to maintain.
+
+---
+
+## 7. Continuous integration (CI) on GitHub Actions
+
+**The situation.** The audit for M0/M1 found the plan referred to "CI" (tests run automatically
+by GitHub on every push) but no milestone owned setting it up. The owner chose to have it.
+
+**Options considered.**
+- **No CI.** Rely on local `check.sh`.
+- **CI in M1.** A GitHub Actions workflow that runs ruff, mypy and the unit tests on every push.
+
+**Decision.** Set up CI in M1. It runs on fake data only: the archive is never in the repo, so
+nothing personal can reach GitHub's servers.
+
+**Why / trade-off.** It gives a public, independent record that the tests pass on a clean
+machine, which also covers the gap left by gitignoring `.claude/` and `.githooks/`.
+**What was given up:** a small amount of setup, and a failing badge whenever the owner pushes
+broken code (which is the point).
+
+---
+
+## 8. Media and intermediate files are deleted after v1
+
+**The situation.** The disk showed 21 GB free in `df` (60 GB in Finder, which also counts
+space macOS can reclaim on demand). The owner plans to delete downloaded videos, extracted
+audio and sampled frames once v1 is done.
+
+**Decision.** Keep all media during the v1 build, and delete it after v1. The extracted
+records (OCR text, transcripts, summaries, embeddings) are kept.
+
+**Why / trade-off.** Media is only needed while extraction is being tuned. **What was given
+up:** D11's justification ("video files are retained, so thumbnails are cheap to revisit") no
+longer holds after v1. Re-extracting or adding thumbnails later means downloading again, and
+reels deleted by their creators in the meantime cannot be recovered.
+
+---
+
+## 9. External links and typed notes deferred to v2
+
+**The situation.** The export holds 17 non-reel items: 10 `external` (8 non-Instagram links,
+1 share with no link key, 1 profile share) and 7 `note`. (Counted 2026-09-19 by the M2
+checker; the first estimate said ~16.)
+The plan never mentioned them.
+
+**Decision.** v1 records them in the manifest as `external` or `note` and excludes them from
+the pipeline. **v2** adds a small pipeline that brings them into the app under their own tag.
+Recorded in `decisions/003`.
+
+**Why / trade-off.** 15 items do not justify new pipeline code on the one-week path. **What was
+given up:** those items don't appear in the v1 app.
+
+---
+
+## 10. Gemini free tier accepted
+
+**The situation.** D17 proposed Gemini's paid tier so that Google would not use the content.
+The owner considers the content (public reels about ML courses, movies, food) not sensitive and
+accepts the free tier. He asked to be told whenever content leaves the machine.
+
+**Decision.** The free tier is acceptable. Every stage that sends content off the machine is
+listed in `docs/CONTRACT.md` under "What leaves this machine".
+
+**Why / trade-off.** It saves a small bill and the billing setup. **What was given up:** Google
+may use what is sent to it to improve its products. Free-tier rate limits may also slow a
+full-corpus Gemini run.
+
+---
+
+## 11. Unverified names in card prose are flagged, not removed
+
+**The situation.** The M5 checker found the fidelity gate never looked at the card's prose for
+names at all. It checked the model's declared `entities` list thoroughly, and scanned the
+title/summary/bullets for URLs and @handles only. So a name could be thrown out of the entity
+list and still stand as the card's headline. Reproduced against the real code: a card titled
+`Nosferatu (2024)` for a reel whose on-screen text never mentions it, with `dropped_entities`
+empty. That is AC-3.1's exact failure mode, on the one field the owner actually reads.
+
+The obvious fix -- strip unverified names the way URLs are stripped -- was measured against the
+50 real M0 items first, and it is destructive. AC-3.1 verifies against **on-screen text only**,
+and 3 of the 50 items have no on-screen text whatsoever. One card reads *"Source Code movie
+recommendation"*: the model identified a real 2011 film from speech, correctly, and the gate
+rejects both "Source Code" and "Hulu" purely because the reel shows no text. Stripping would
+retitle that card *"movie recommendation"* -- destroying a correct card, which is the precise
+failure the project exists to prevent. 35 of 50 items carry at least one name in this position.
+
+**Options considered.**
+1. Strip unverified names from prose. AC-3.1 met as written; correct cards destroyed.
+2. Leave the gap open. No cost today, but no record, no count, and no way to know which cards
+   carry an unconfirmed name.
+3. Flag and record without editing the text.
+4. Widen the evidence to OCR + transcript, so spoken names count. Rescues the *Source Code*
+   case, but weakens the guarantee (Whisper can mishear a name) and changes AC-3.1.
+
+**Decision.** Option 3 now; option 4 deferred. The gate finds name-shaped phrases in prose,
+records each one it cannot confirm in the new `fusion.unverified_names` column with its
+location, and leaves the prose byte-for-byte unchanged. The card shows a
+"N unverified names" badge listing them. The owner will decide between stripping and widening
+the evidence after judging the 50 M0 reels, and **AC-3.1 will be rewritten then** -- that
+judgement measures precisely whether a thin card reads as "subject not named".
+
+**Why / trade-off.** It makes the doubt visible and countable without destroying anything, and
+it defers an irreversible choice until there is evidence for it. **What was given up:**
+**AC-3.1 is NOT met.** A stored card can still contain a name that on-screen text does not
+confirm -- it is merely marked now. This is recorded as a miss, not a redefinition; §3 is
+reopened in the plan's status board until the post-judging decision closes it.
+
+**Known limits, measured rather than assumed.**
+- Where prose is Title Case, capitalisation carries no signal, so the scan stands down and
+  only names the model itself declared are caught. Scanning anyway flagged 46 of 50 cards,
+  which would make the badge meaningless. Proper detection needs name recognition or a
+  dictionary; both are out of scope for v1.
+- After tuning against the real M0 output, 32 of 50 cards carry at least one flag (144 flags
+  total). That number is high because it is honest: on-screen-text-only verification genuinely
+  cannot confirm most names in this archive.
+
+---
+
+## 12. Provenance on every card
+
+**The situation.** The owner asked for the original reel/post link, source account and date on
+the card, directly under the title and above the summary, so any card can be traced back to
+the thing it came from -- and said to fall back to the link alone if account or date cost extra
+from Apify.
+
+**Decision.** All three are shown. Nothing was dropped and nothing extra is paid: `url`,
+`source_account` and `sent_at` all come from the Instagram export that `ingest` already parses,
+not from the fetch vendor. The "Open original" link moved from the bottom of the detail page
+into that line, and the same line now appears on list and search results.
+
+**Why / trade-off.** A knowledge base whose entries cannot be traced to a source is a pile of
+assertions. **What was given up:** a little horizontal space on the card, and one more outbound
+link per card on list pages.

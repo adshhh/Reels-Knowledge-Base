@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ record.query }} — Reel KB labelling{% endblock %}
+{% block content %}
+<a class="nav-link" href="/queries">&larr; All queries</a>
+<h1>{{ record.query }}</h1>
+<p class="hint">Pooled top results from every retrieval method, merged and shuffled &mdash; grade each one on its own merits.</p>
+
+<form method="post" action="/queries/{{ record.qid }}" class="judge-form">
+  <label class="canary-row">
+    <input type="checkbox" name="canary" {% if record.canary %}checked{% endif %}>
+    Canary query (must always work &mdash; e.g. a caption that never names its subject)
+  </label>
+
+  {% if not candidates %}
+  <p class="empty">No candidates found for this query yet.</p>
+  {% endif %}
+
+  {% for c in candidates %}
+  <div class="candidate">
+    <div class="candidate-header">
+      <a href="{{ c.card.url }}" target="_blank" rel="noopener">{{ c.card.title }}</a>
+    </div>
+    <div class="candidate-summary">{{ c.card.summary }}</div>
+    {% for label, text in c.card.channels() %}
+    <div class="channel small">
+      <span class="channel-label">{{ label }}</span>
+      <span class="channel-text">{{ text[:220] }}{% if text | length > 220 %}&hellip;{% endif %}</span>
+    </div>
+    {% endfor %}
+    <div class="grade-row" role="radiogroup" aria-label="relevance">
+      <label class="grade grade-2">
+        <input type="radio" name="judgement_{{ c.hid }}" value="2" {% if c.judgement == 2 %}checked{% endif %}>
+        Exactly this
+      </label>
+      <label class="grade grade-1">
+        <input type="radio" name="judgement_{{ c.hid }}" value="1" {% if c.judgement == 1 %}checked{% endif %}>
+        Related
+      </label>
+      <label class="grade grade-0">
+        <input type="radio" name="judgement_{{ c.hid }}" value="0" {% if c.judgement == 0 %}checked{% endif %}>
+        Irrelevant
+      </label>
+    </div>
+  </div>
+  {% endfor %}
+
+  <button type="submit" class="save-btn">Save judgements</button>
+</form>
+{% endblock %}

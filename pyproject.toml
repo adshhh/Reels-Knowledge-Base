@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reelkb"
+version = "0.1.0"
+description = "A searchable, browsable knowledge base built from saved Instagram reels."
+requires-python = ">=3.11"
+dependencies = [
+  "numpy",
+  "fastapi",
+  "uvicorn",
+  "jinja2",
+  "python-multipart",
+]
+
+[project.optional-dependencies]
+# Everything that loads a model or talks to a vendor. Unit tests must never import these
+# (enforced by the import guard in tests/conftest.py).
+pipeline = [
+  "apify-client",
+  "yt-dlp",
+  "ocrmac",
+  "torch",
+  "silero-vad",
+  "onnxruntime",  # silero-vad imports it but does not declare it
+  "groq",
+  "google-genai",
+  "scikit-learn",
+  "FlagEmbedding",
+]
+dev = [
+  "pytest",
+  "ruff",
+  "mypy",
+  "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["claude-starter-kit", "m0"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+packages = ["reelkb"]
+exclude = ["^claude-starter-kit/", "^m0/", "^\\.venv/", "^build/"]
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# Belt-and-suspenders alongside the editable install: on this machine the two `.pth` files
+# that `pip install -e` writes into `.venv/lib/.../site-packages` (this one and
+# `distutils-precedence.pth`) keep coming back with the macOS "hidden" flag set, which
+# CPython 3.11's site.py silently skips ("Skipping hidden .pth file", visible with `python
+# -v`) -- so `import reelkb` fails outside of a shell that has just run
+# `chflags nohidden .venv/lib/python3.11/site-packages/*.pth`. pytest's own `pythonpath`
+# option sidesteps that flakiness entirely for the test suite (mypy is unaffected: it already
+# resolves `reelkb` via `mypy_path` above, not a real import).
+pythonpath = ["src"]
+markers = [
+  "realmodel: loads a real model or calls a real API; excluded from the unit suite (run with -m realmodel)",
+]
+
+[tool.setuptools.package-data]
+reelkb = ["contract/*.sql", "serve/templates/*", "serve/static/*", "label/templates/*", "label/static/*"]

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Reel Knowledge Base{% endblock %}
+{% block content %}
+<h1>Categories</h1>
+<p class="muted">Everything you've saved, sorted into what it's actually about.</p>
+<ul class="categories">
+  {% for cat in categories %}
+  <li>
+    <a class="category-link" href="/category/{{ cat.category_id }}">
+      <span>{{ cat.name }}</span>
+      <span class="count">{{ cat.count }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

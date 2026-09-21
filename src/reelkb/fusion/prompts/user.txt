@@ -1,0 +1,12 @@
+Caption:
+$caption
+
+On-screen text (each line is separate text seen at some point in the clip):
+$ocr_text
+
+Speech transcript:
+$transcript
+
+Notes: $notes
+
+Produce the JSON object now.

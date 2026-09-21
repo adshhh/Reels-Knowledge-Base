@@ -1,0 +1,210 @@
+/* Calm, phone-friendly styling for the labelling page. No external fonts or CDNs: system
+   font stack only, so this works fully offline on the owner's phone over Tailscale. */
+
+:root {
+  --bg: #fafaf9;
+  --text: #1c1c1a;
+  --muted: #6b6b66;
+  --border: #e2e0da;
+  --accent: #2f6f4f;
+  --accent-contrast: #ffffff;
+  --card-bg: #ffffff;
+  --guess-bg: #f2f1ec;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 16px 96px;
+}
+
+.topnav {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topnav a { color: var(--text); text-decoration: none; font-weight: 600; }
+.topnav a:hover { color: var(--accent); }
+
+.progress-wrap { margin: 12px 0; }
+.progress-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+.progress-bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.2s ease; }
+
+.nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+.nav-link { color: var(--accent); text-decoration: none; }
+.position { color: var(--muted); }
+
+.ig-link {
+  display: inline-block;
+  margin: 8px 0 12px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.flags { margin-bottom: 8px; }
+.flag {
+  display: inline-block;
+  background: #fdf1dc;
+  color: #7a5a00;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  margin-right: 6px;
+}
+
+.evidence { margin: 12px 0; }
+.channel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.channel-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.channel-text { white-space: pre-wrap; word-break: break-word; }
+.channel.small { border: none; padding: 4px 0; margin-bottom: 2px; background: transparent; }
+.channel.small .channel-label { display: inline; margin-right: 6px; }
+.channel.small .channel-text { font-size: 0.9rem; }
+
+.models-guess {
+  background: var(--guess-bg);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0 16px;
+  color: var(--muted);
+}
+.models-guess-label { font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; }
+.models-guess-title { font-weight: 600; color: var(--text); opacity: 0.75; }
+.models-guess-summary { font-size: 0.9rem; opacity: 0.75; }
+
+.category-form { margin-top: 8px; }
+.category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cat-btn {
+  position: relative;
+  padding: 16px 10px;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.cat-btn:active { background: var(--accent); color: var(--accent-contrast); }
+.cat-btn.your-answer { border-color: var(--accent); border-width: 2px; }
+.key-hint {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  background: var(--border);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 1px 4px;
+  margin-right: 6px;
+}
+.your-answer-mark { display: block; font-size: 0.75rem; color: var(--accent); margin-top: 4px; }
+
+.skip-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.hint { color: var(--muted); font-size: 0.9rem; }
+
+.new-query-form { display: flex; gap: 8px; margin: 12px 0 20px; }
+.new-query-form input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 1rem;
+}
+.new-query-form button, .save-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.query-list { list-style: none; padding: 0; }
+.query-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.query-list a { color: var(--text); text-decoration: none; font-weight: 600; }
+.query-meta { color: var(--muted); font-size: 0.85rem; }
+
+.canary-row { display: block; margin: 8px 0 16px; font-size: 0.9rem; color: var(--muted); }
+
+.candidate {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.candidate-header a { color: var(--text); font-weight: 600; text-decoration: none; }
+.candidate-summary { color: var(--muted); font-size: 0.9rem; margin: 2px 0 6px; }
+
+.grade-row { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.grade { font-size: 0.85rem; display: flex; align-items: center; gap: 4px; }
+
+.save-btn { display: block; width: 100%; margin-top: 8px; font-size: 1.05rem; padding: 14px; }
+
+.empty { color: var(--muted); }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171715;
+    --text: #ece9e2;
+    --muted: #9c9a92;
+    --border: #34332e;
+    --accent: #5fbf8e;
+    --accent-contrast: #0c1410;
+    --card-bg: #211f1c;
+    --guess-bg: #1d1c19;
+  }
+}

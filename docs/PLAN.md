@@ -20,9 +20,20 @@ It is a personal project, built to the standard of a portfolio project, in a pub
 > **CAPPED AT 20 LINES. REWRITTEN EACH MILESTONE, NEVER APPENDED TO.**
 > Narrative history lives in `docs/checkpoint_report.md`.
 >
-> **Last completed:** nothing — planning phase
-> **Next:** M0 — attrition probe and extraction bake-off
-> **Open:** §6 model gate unresolved (D14). §2, §3, §6, §8 reopened by `decisions/001–002` (D17, D18) and must be rewritten and re-locked before building. Owner to create Apify + Groq accounts and run `git init`; kit adaptation awaiting sign-off
+> **Last completed:** Wave 0 + Wave 1, all stages built and tested on fake data (452 tests,
+> ruff + mypy clean). Four `checker` runs and a code review found 20+ defects, all fixed with
+> regression tests. M0 finished; `data/m0/judge.html` awaits the owner's blind judgement.
+> **Next:** owner judges the 50 M0 reels → unblind → close the §6 model gate → Wave 2 (real
+> corpus, stages sequential, fetch route decided first).
+> **Open — needs the owner:** (1) AC-3.1 rewrite after judging: strip unverified names, or
+> admit the transcript as evidence; (2) whether `queries_v1.jsonl` is committed with query
+> text in it; (3) `unhide` is a scope addition against D15's "permanent" — keep or revert;
+> (4) is 36% unreadable on-screen text too many; (5) Wave 2 fetch route — all-Apify ($23.24)
+> or yt-dlp + Apify carousels ($2.85); (6) a second judged batch, drawn at random rather than
+> hard-selected, before committing the corpus.
+> **Open — plan sections:** §6 model gate (D14) closes after M0. §2, §3, §6, §8 reopened by
+> `decisions/001–002`. §3 additionally by `decisions/004`: **AC-3.1 is NOT MET**.
+> **Before labelling:** back up `data/eval_salt` and `data/eval_lookup.json` off this machine.
 
 ---
 
@@ -55,7 +66,7 @@ Terms used throughout this document, defined once here.
 |---|---|---|
 | §1 Product form | 🟢 LOCKED | |
 | §2 Acquisition | 🟡 OPEN | `decisions/002` (yt-dlp for top-ups) |
-| §3 Extraction | 🟡 OPEN | `decisions/001` (hosted models allowed) |
+| §3 Extraction | 🟡 OPEN | `decisions/001` (hosted models allowed); `decisions/004` (**AC-3.1 NOT MET** — unverified names in prose are flagged, not removed; rewrite after the owner judges the 50 M0 reels) |
 | §4 Categorisation | 🟢 LOCKED | |
 | §5 Search | 🟢 LOCKED | |
 | §6 Models and where they run | 🟡 OPEN | `decisions/001`; model gate D14 still unresolved |
@@ -86,7 +97,7 @@ Numbered, permanent, never renumbered. When one is superseded, mark it *(superse
 | D8 | **VAD-gate before Whisper, always.** | Whisper fabricates fluent text on music-only audio — a documented training artefact. Ungated, this silently poisons hundreds of records in an archive full of music-backed text-slide reels. Empty is a valid answer, not a retry trigger. |
 | D9 | *(superseded by D17)* **Open-weight models for all inference; Apple Vision excepted.** | Fusion and classification run `gpt-oss-20b` on Groq, not Gemini — once OCR owns the reading, fusion is a pure text task and an open model does it for the same money. Apple Vision OCR is closed-source but on-device, free, and transmits nothing, which satisfies the actual reasons for preferring open weights. |
 | D10 | **Fine-tuning is out of v1.** | 1,870 examples sits at the viable floor and cannot beat an off-the-shelf model by enough to matter. Its original justification was portfolio depth, which no longer applies. Transcripts and summaries are kept in clean JSONL from day one, so a later fine-tune is a weekend rather than a rewrite. |
-| D11 | **No thumbnails on cards.** | They help the ~486 movie items and do nothing for technical content, while costing storage, serving and layout work. Video files are retained, so this is cheap to revisit if text-only cards prove hard to scan. |
+| D11 | *(note: media is deleted after v1, see DESIGN_RATIONALE §8, so revisiting this later means re-downloading)* **No thumbnails on cards.** | They help the ~486 movie items and do nothing for technical content, while costing storage, serving and layout work. Video files are retained, so this is cheap to revisit if text-only cards prove hard to scan. |
 | D12 | **The fetch is the attrition probe.** No separate probing stage. | `memo23` charges only for successful retrievals and returns an error row otherwise, so alive/dead comes free as a side effect. A dedicated Bright Data pass would be an extra stage to learn the same thing. |
 | D13 | **No written visual rules, no screenshot evidence.** The owner checks the UI manually. | He is the only user and the only person whose opinion of the design matters, so a written rulebook would be a proxy for a judgement he can make directly. Consequences: the `design-reviewer` agent is deleted (nothing to review) and `/checkpoint` drops its screenshot requirement. |
 | D14 | **Model selection is a hard gate before any building.** | All six stages — fetch, OCR, speech, fusion, classification, embeddings — must be agreed in a dedicated discussion first. Recorded so it cannot be skipped by momentum. |
@@ -144,7 +155,7 @@ The JSON is mojibake-encoded — UTF-8 bytes read as Latin-1 — and needs one d
 
 **Acceptance criteria**
 
-1. **AC-2.1** — `message_1.json` parses to exactly 1,870 unique records, each with a resolvable shortcode, decoded caption, and source account. Mojibake is corrected: no record contains the literal sequence `ð`.
+1. **AC-2.1** — `message_1.json` parses to exactly 1,870 unique records, each with a resolvable shortcode (1,714 `/reel/` + 156 `/p/`, measured 2026-09-19). Caption and source account are decoded where present; the export lacks them on a handful of shares, which are counted, not invented. 10 items are recorded as `external` and excluded from the 1,870: 8 links to non-Instagram hosts, 1 share whose `link` key is absent entirely, and 1 Instagram profile share. *(Corrected 2026-09-19 by the M2 checker, which recounted the file: the earlier "9 non-Instagram links + 1 profile share" split was wrong, though the total of 10 was right.)* A further 7 items are `note`. Mojibake is corrected: no record contains the literal sequence `ð`.
    *Proof: `tests/test_export_parser.py`, asserting counts and running a Unicode sanity check over all captions.*
 2. **AC-2.2** — Every one of the 1,870 ends in a terminal state — fetched, dead, or unrecoverable — with a recorded reason, and the pipeline never re-requests a terminal item.
    *Proof: `manifest.db` row count equals 1,870 with no `NULL` status; a second run issues zero fetch requests for terminal items, asserted by a request counter.*
@@ -190,7 +201,8 @@ The third is real and unsolved without adding a music-detection model. v1 accept
 **Acceptance criteria**
 
 1. **AC-3.1 (AC-FIDELITY)** — No stored record contains a URL, @handle, or proper-noun title absent from that reel's OCR output within edit distance 2.
-   *Proof: `tests/test_fidelity_gate.py` feeds fusion outputs containing deliberately planted fake URLs and asserts every one is caught. The milestone fails if a planted fake survives.*
+   *Proof: `tests/fusion/test_fidelity_gate.py` and `tests/fusion/test_fidelity_short_and_prose.py` feed fusion outputs containing deliberately planted fakes and assert every one is caught. The milestone fails if a planted fake survives.*
+   **⚠️ NOT MET as written — see `decisions/004`.** Enforced for URLs and @handles everywhere, and for every entity in the model's declared list. **Proper-noun titles in the card's prose are flagged and recorded (`fusion.unverified_names`), not removed**, because stripping them destroys correct cards: 3 of the 50 M0 reels have no on-screen text at all, and one such card correctly names a film heard only in speech. Rewritten after the owner's 50-reel judgement.
 2. **AC-3.2** — On reels where VAD detects no voice at all, the transcript field is empty. Zero fabricated transcripts on a hand-checked sample of 50 instrumental-music-only reels.
    *Proof: `tests/test_vad_gate.py` with silent and instrumental-music audio fixtures; plus a recorded manual check of 50 reels in `docs/checkpoint_report.md`.*
    *Scope note: this criterion covers instrumental audio only. Sung vocals legitimately trigger VAD — see the known gap above. M0 reports the rate.*
@@ -228,7 +240,7 @@ The third is real and unsolved without adding a music-detection model. v1 accept
 
 Hybrid retrieval over BGE-M3 embeddings: a dense component matching on meaning, and a sparse component matching on exact terms. The sparse half matters specifically because part of this archive is transliterated Hindi in Latin script, which every dense embedding model handles poorly and which no benchmark covers.
 
-Storage is a numpy array plus a SQLite table. **2,000 items × 768 numbers is about 6 MB** — a vector database at this scale solves a problem that does not exist, and brute-force comparison is faster than the network call that would reach a database server.
+Storage is a numpy array plus a SQLite table. **2,000 items × 1,024 numbers is about 8 MB** *(corrected 2026-09-19: BGE-M3's dense vectors are 1,024-dimensional, not 768; the conclusion is unchanged)* — a vector database at this scale solves a problem that does not exist, and brute-force comparison is faster than the network call that would reach a database server.
 
 Filters: category, source account, date range, language (D16). Hidden items (D15) are excluded from all results.
 
@@ -269,8 +281,8 @@ Filters: category, source account, date range, language (D16). Hidden items (D15
 
 1. **AC-6.1** — Peak memory across the full pipeline stays under 5 GB, measured.
    *Proof: a memory-profiling run over 50 reels, recorded in `docs/checkpoint_report.md`.*
-2. **AC-6.2** — No unit test makes a network call or loads a model.
-   *Proof: `pytest` run with network disabled in CI; a socket-blocking fixture fails any test that attempts a connection.*
+2. **AC-6.2** — No unit test makes a network call or loads a model **from within the test process**. *(Scope stated honestly 2026-09-19 after the M1 checker demonstrated the limit: the guards patch this process's sockets and imports, so a test that shells out to another program — `curl`, a child `python` — can still reach the network. No test does. Closing that hole would mean sandboxing the whole test run, which is out of scope for v1.)*
+   *Proof: a socket-blocking fixture in `tests/conftest.py` fails any unit test that attempts a connection, and an import guard fails any unit test that imports a model library (torch, mlx, ocrmac, FlagEmbedding). Each guard is proven with `/prove-it`. (Corrected 2026-09-19: the plan had no CI and no milestone owned one; the local guard is the proof. CI is optional, see M11.)*
 
 ---
 
@@ -352,6 +364,7 @@ Named explicitly so that adding them later is a decision rather than a drift.
 - **Multi-user anything.** One user, one machine.
 - **Public deployment.** Tailscale only. No authentication layer is built because none is needed.
 - **Recovering reels that no longer exist.** Dead permalinks are recorded as dead.
+- **External links and typed notes** (17 items, measured: 10 `external` = 8 non-Instagram links + 1 link-less share + 1 profile share; 7 `note`). Recorded in the manifest as `external`/`note`; a v2 pipeline surfaces them under their own tag. See `decisions/003`.
 - **Video content beyond text.** No scene description, object detection, or face recognition. Text is the payload.
 
 ---
@@ -379,8 +392,8 @@ The numbered sections above are *planning topics*, not equal units of work. This
 | # | Milestone | Plan sections | Why this boundary |
 |---|---|---|---|
 | **Phase A — Foundation** | | | |
-| 0 | **Extraction bake-off** | §2, §3, §6 | Exits on a written finding, not ACs. Answers what nothing else can: how many reels survive, whether OCR-led or model-led extraction wins on the hardest 50, and **how often sung vocals trigger the VAD gate**. Feeds the §6 model gate. ~$4 and an hour. |
-| 1 | **Scaffold, kit adaptation, both guards proven** | §6, §7 | The Python check hook and the data-commit guard both break *silently* if wrong. Proven by deliberate failure, not assertion. |
+| 0 | **Extraction bake-off** | §2, §3, §6 | Exits on a written finding, not ACs. On 50 hard items (including ~10 `/p/` posts and the *Flow* reel) it measures: survival via `memo23`; whether logged-out yt-dlp works; OCR + Groq Whisper + `gpt-oss-120b` vs Gemini Flash-Lite on subject naming and URL accuracy; **the sung-vocal rate**; the size of the blank bucket; the unreadable-on-screen-text count; whether `/p/` posts are videos or images; and **average media size, projected to the full corpus against free disk**. Feeds the §6 model gate (D14). ~$5 and a few hours. |
+| 1 | **Scaffold, kit adaptation, both guards proven** (plus CI on GitHub Actions, the shared data contract, and database-level enforcement of AC-3.3 write-once and AC-8.2 read-only; see `DESIGN_RATIONALE.md` §7) | §6, §7, §8 | The Python check hook and the data-commit guard both break *silently* if wrong. Proven by deliberate failure, not assertion. |
 | 2 | **Export parser as the scope contract** | §2 | Fully testable with zero ML and zero network. Getting the contract right is its own judgement call. |
 | **Phase B — Extraction** | | | |
 | 3 | **Vendor fetch + manifest** | §2, §8 | Resumability is the whole point; it belongs with the first long-running job. |
@@ -393,7 +406,7 @@ The numbered sections above are *planning topics*, not equal units of work. This
 | 8 | **Embeddings + search + AC-SEARCH** | §5, §7 | |
 | 9 | **Category feed UI** | §1 | Visual quality is checked by the owner directly (D13), not by written rules or screenshots. |
 | 10 | **Search UI + corrections + curation** | §1, §4 | Split from M9 because it is a second distinct review question. Includes hide/edit (D15). |
-| 11 | **Tailscale + verification** | §10 | |
+| 11 | **Tailscale + verification** | §10, §6 | Owns **AC-6.1** (peak memory under 5 GB, measured on the real full-pipeline run; M0 records an early number). Optional: a GitHub Actions workflow running the unit tests. |
 
 **Rules for this table**
 
@@ -408,27 +421,69 @@ The numbered sections above are *planning topics*, not equal units of work. This
 
 ## How the build actually runs
 
-> **Amended 2026-09-19** (`DESIGN_RATIONALE.md` §4): milestones that need no real data are
-> built **in parallel waves** by subagents that own separate folders; the owner reviews their
-> checkpoints and `checker` verdicts in batches and commits per wave. Steps 3–8 below still
-> apply to every milestone; steps 1 and 10 happen once per wave.
+*Rewritten 2026-09-19 to match how the build actually works (`DESIGN_RATIONALE.md` §4). The
+earlier one-milestone-at-a-time loop was replaced by **waves**.*
+
+### Who does what
+
+| Role | Who | Job |
+|---|---|---|
+| **Owner** | You | Make decisions, judge and label real data, review the evidence, run every git command |
+| **Lead** | The main Claude session you talk to | Plans, writes the shared contract, briefs the builders, re-runs their tests, fixes integration problems, writes the checkpoint |
+| **Builders** | Subagents the lead launches (Sonnet), several at once | Each builds one milestone inside **its own folders only** (map in `docs/CONTRACT.md`), against fake data |
+| **`checker`** | A subagent with no build history | Verifies each milestone's acceptance criteria independently, so it can't be talked round by the builder's story |
+
+### The three waves
+
+| Wave | What | How it runs | Milestones |
+|---|---|---|---|
+| **0: Foundation** | The skeleton everything plugs into: the data contract (database layout, who may write what), the test guards, CI, plus the M0 extraction test on 50 real reels | The lead builds it alone, because every builder depends on it | M0, M1 |
+| **1: Parallel build** | Everything that can be built and tested with **fake data** | Builders work **at the same time**, each in its own folders | M2, M3, M5, M9, M10, eval + search code (M7/M8), labelling page |
+| **2: Real data** | Run the pipeline on your archive, then measure and tune | **One stage at a time** (8 GB of RAM), run by the lead, with your tasks in between | M4, M6, M7, M8 (measuring), M11 |
+
+**Wave 2 order:** fetch → OCR + speech (M4) → fusion → embeddings → taxonomy draft (M6) →
+**you edit the taxonomy and label 150 reels** → classify (M7) → **you write and grade 50 queries** →
+eval and tuning (M8) → Tailscale and final verification (M11).
+
+### The loop for each wave
 
 | | Who | What |
 |---|---|---|
-| 1 | **Owner** | Create a branch for the milestone |
-| 2 | **Owner** | Plan mode, name the milestone |
-| 3 | Agent | `/plan-milestone <n>` — audit the plan sections, then write the implementation plan |
-| 4 | **Owner** | ⭐ Review the ⚠️ *Needs your decision* section and the proof plan. Approve or redirect |
-| 5 | Agent | Build. `check.sh` runs after every edit and blocks on failure |
-| 6 | Agent | `/checkpoint` — evidence table, resume box, git commands |
-| 7 | Agent | `checker` subagent verifies the ACs with no build context |
-| 8 | Agent | `/code-review` on the diff; fix what it finds |
-| 9 | **Owner** | ⭐ Open the app. Check the evidence table against `checker`'s verdicts. Ask `/prove-it` on anything load-bearing |
-| 10 | **Owner** | Commit, push, merge |
+| 1 | **Owner** | Create one branch for the wave (`git checkout -b wave-N`) |
+| 2 | Lead | `/plan-milestone`: audit the plan against reality and write the plan. **Wave 0 had a full plan you approved. Wave 1's builders got detailed written briefs from the lead instead, with no separate plan for you to review** |
+| 3 | **Owner** | ⭐ Answer the ⚠️ *Needs your decision* items |
+| 4 | Builders / lead | Build. `check.sh` checks each edit (only the edited folder plus the contract, so builders don't block each other) and blocks on failure |
+| 5 | Lead | Collect every builder's report and **re-run their tests independently**: a builder's "it passes" is a claim, not evidence |
+| 6 | Lead | Run the **full** test suite over the combined work and fix integration problems |
+| 7 | Lead | `checker` on each milestone (no build context), then `/code-review` on the combined changes, fixing what they find |
+| 8 | Lead | **One batched `/checkpoint`** for the wave. For each milestone: a short retroactive audit (plan vs. what was built), an evidence table, every decision a builder made on its own, and how to see it yourself |
+| 9 | **Owner** | ⭐ Try the apps, compare the evidence with `checker`'s verdicts, reject any independent decision you disagree with, and ask `/prove-it` on anything important |
+| 10 | **Owner** | Commit and push the wave's branch, then merge |
 
-**Steps 4 and 9 are the leverage points.** Step 4 is cheap to redirect — it is a paragraph, not code. Step 9 catches what automated checks structurally cannot: is this actually what was agreed, and does it look right.
+**Your two leverage points are steps 3 and 9.** Step 3 is the cheapest place to redirect,
+because it's a paragraph, not code. Step 9 catches what no automated check can: is this what
+was agreed, and does it look right.
 
-**Why the agent runs `/code-review` (step 8) rather than the owner:** it comes before the owner's time is spent, so a milestone that review would reject never reaches step 9. The known weakness is that the agent reviewing its own diff carries the build narrative and is therefore blind to "this was the wrong approach" — which is precisely the gap `checker` fills at step 7 with no build context. The two together are stronger than either alone; neither replaces step 9.
+**What parallel building gave up, and what makes up for it:**
+- **You no longer review each milestone's plan before it's built.** A wrong assumption can
+  spread across several builders before anyone sees it. Covered by the shared contract
+  (builders can't disagree about data shapes), the retroactive audit in step 8, and your
+  veto over every independent decision in step 9.
+- **The UI is built on fake data.** Expect one UI polish pass after real data arrives.
+- **The owner reviews in batches,** so each review is bigger. The checkpoint leads with the
+  decisions that need you, so the reading stays short.
+
+**Why the lead re-runs tests and runs `checker`:** builders report on their own work and
+sometimes get it wrong (one reported 74 tests where 33 existed). The lead's re-run catches
+false reports. `checker` catches "this was the wrong approach", which the builder and lead
+can both miss, because both know the build story.
+
+### Pausing and resuming
+
+You can say "halt" at any time. The lead stops every builder **and** any program they left
+running (downloads, model runs), then reports where each piece stands. Unfinished work stays on
+disk, unreviewed. On "resume", stopped builders are relaunched and told to **continue from their
+existing files**, not start over. Nothing is committed until step 10.
 
 ---
 
@@ -438,7 +493,7 @@ Run against the real system. Record the result in `docs/VERIFICATION.md`, **incl
 
 1. Fresh clone, install dependencies, run `pytest` → green, and no test makes a network call
 2. Introduce a deliberate Python type error → `check.sh` **blocks**. Revert → green
-3. `git add data/raw/message_1.json && git commit` → **blocked** by the pre-commit hook
+3. `git add -f data/raw/message_1.json && git commit` → **blocked** by the pre-commit hook (`-f` because `.gitignore` already refuses a plain add; the hook is the second line of defence). Note: `.githooks/` and `.claude/` are gitignored by the owner's choice, so this runs on the owner's machine, not a fresh clone.
 4. Plant a fabricated URL in a fusion output → the fidelity gate **catches it**
 5. Pick three music-only reels → the speech field is empty, not invented
 6. `/eval` → AC-CAT and AC-SEARCH numbers printed against the frozen fixtures
