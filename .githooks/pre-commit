@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Blocks any commit that stages personal data or secrets.
+#
+# Lives in .githooks/ (not .git/hooks/) so it is version-controlled and survives a re-clone.
+# Activate with:  git config core.hooksPath .githooks
+#
+# Override, only when you genuinely mean it:  git commit --no-verify
+set -uo pipefail
+
+BLOCKED_PATHS='^(data/|.*\.env$|.*\.env\..*|.*\.envrc$|envrc$|secrets/|.*\.pem$|corrections\.jsonl$|curation\.jsonl$|records/)'
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$STAGED" ] && exit 0
+
+OFFENDERS=$(printf '%s\n' "$STAGED" | grep -E "$BLOCKED_PATHS" || true)
+
+if [ -n "$OFFENDERS" ]; then
+  echo "" >&2
+  echo "COMMIT BLOCKED by .githooks/pre-commit" >&2
+  echo "" >&2
+  echo "These staged paths hold personal data or secrets and this repo is public:" >&2
+  printf '%s\n' "$OFFENDERS" | sed 's/^/    /' >&2
+  echo "" >&2
+  echo "Unstage them:" >&2
+  printf '%s\n' "$OFFENDERS" | sed 's|^|    git restore --staged |' >&2
+  echo "" >&2
+  echo "If you are certain this is intentional: git commit --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+
+# Second check: never let the data exclusions quietly disappear from .gitignore.
+if printf '%s\n' "$STAGED" | grep -qx '.gitignore'; then
+
+  for pattern in 'data/' '.env' 'records/' '.envrc'; do
+    if ! git show ":.gitignore" 2>/dev/null | grep -qx -- "$pattern"; then
+      echo "" >&2
+      echo "COMMIT BLOCKED by .githooks/pre-commit" >&2
+      echo "" >&2
+      echo "The staged .gitignore no longer excludes '$pattern'." >&2
+      echo "That exclusion is what keeps personal data out of a public repo." >&2
+      echo "" >&2
+      exit 1
+    fi
+  done
+fi
+
+exit 0

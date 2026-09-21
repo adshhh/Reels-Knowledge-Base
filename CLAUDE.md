@@ -52,20 +52,34 @@ aesthetics. Lead with the worst one and say plainly that it is the worst.
 Be clear and concise: no filler, no restating the finding three ways. Concise means fewer
 words per point, never fewer points — completeness is not what gets cut.
 
-## Milestone workflow
+## Build workflow: waves and milestones
 
 Work is organized into **12 build milestones (M0–M11)** — see the Build milestones table in
-`docs/PLAN.md`. A milestone, not a plan section, is the unit of work. Before building one:
-read that table, then read the plan sections and acceptance criteria it names. **Do not work
-from memory of the plan.**
+`docs/PLAN.md` — which are grouped into **three waves**. The wave, not the milestone, is the
+unit of work and of owner review; the milestone remains the unit of **verification and
+reporting**. The authoritative description is *"How the build actually runs"* in
+`docs/PLAN.md` — read it, and the numbered wave loop in it, rather than working from this
+summary.
 
-## Standing instruction: checkpoint after every milestone
+- **Wave 0** — the lead builds the foundation alone, because every builder depends on it.
+- **Wave 1** — builders work in parallel against fake data, each confined to its own folders
+  (map in `docs/CONTRACT.md`). They get written briefs from the lead, not separate plans.
+- **Wave 2** — real data, **one stage at a time**, run by the lead with owner tasks between.
 
-Pause after each milestone and run `/checkpoint`: **what** was built, **why** (including
+Before building any milestone: read its row in the Build milestones table, then read the plan
+sections and acceptance criteria it names. **Do not work from memory of the plan.**
+
+## Standing instruction: checkpoint once per wave
+
+Pause at the end of each wave and run **one batched `/checkpoint`** (wave loop step 8),
+covering every milestone in it. Per milestone: **what** was built, **why** (including
 anything decided independently), the **evidence table**, and **how to see it yourself** (no
-screenshots — D13: the owner checks the UI directly). Flag anything
-uncertain rather than glossing it. Do this automatically, without being asked. End with the
-exact git commands for the owner to run, each with a one-line explanation.
+screenshots — D13: the owner checks the UI directly). Flag anything uncertain rather than
+glossing it. Do this automatically, without being asked. End with the exact git commands for
+the owner to run, each with a one-line explanation.
+
+**A mid-wave checkpoint is still right when the owner asks for one, or when a wave runs long
+enough that batching would bury something he needs to act on.** Say which it is.
 
 ## Hard rules
 

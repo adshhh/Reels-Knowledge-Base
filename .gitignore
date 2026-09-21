@@ -41,5 +41,4 @@ build/
 !.env.example
 
 # Local agent state and tooling — kept on this machine only (owner's choice)
-.claude/
-.githooks/
+.claude/settings.json
