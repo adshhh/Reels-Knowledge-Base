@@ -1,15 +1,8 @@
 """``HybridSearcher``: the real implementation of ``contract.search_api.Searcher`` (§5, M8).
-
-Combines a ``DenseIndex`` (semantic similarity) and a ``SparseIndex`` (exact-term matching)
-with the fusion method from ``fusion.py``, then applies filters and curation exactly like
-``reelkb.testing.fake_search.SubstringSearcher`` does, so the web app can swap one for the
-other with no other code change.
-
-Both indexes are pre-built (by ``embed.py``, from real BGE-M3 vectors, or by tests, from
-``FakeEncoder`` vectors) -- ``search()`` only encodes the *query* at call time and scores it
-against the stored per-item vectors. That is what makes this "brute force": no approximate
-nearest-neighbour structure, just a dot product against every row (§5 -- fast enough at this
-corpus size that a vector database would add latency, not remove it).
+Combines a ``DenseIndex`` (semantic) and ``SparseIndex`` (exact-term) via `fusion.py`,
+applying filters/curation exactly like `fake_search.SubstringSearcher`, so the app can swap
+one for the other. Both indexes are pre-built; `search()` only encodes the query at call time
+and dot-products it against every stored row -- brute force, fast enough at this corpus size.
 """
 
 from __future__ import annotations

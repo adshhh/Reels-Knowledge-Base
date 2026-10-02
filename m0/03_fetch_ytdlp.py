@@ -1,21 +1,8 @@
-"""M0 step 3: Fetch B -- yt-dlp, logged OUT, no cookies, on the same 50-item sample.
-
-Throttled with a random 10-30s delay between items (politeness, avoid
-tripping a rate limit that would poison the measurement). Stops early if 5
-consecutive items show a login-wall or rate-limit style error, and records
-that as a finding rather than grinding through 50 identical failures.
-
-If Apify already succeeded for a shortcode (data/m0/apify_results.jsonl,
-status == "success"), yt-dlp still attempts the fetch (this is an
-independent measurement of yt-dlp's own success rate) but the downloaded
-file is deleted immediately after recording its size -- we don't keep two
-copies of media Apify already retained.
-
-Resumable: skips shortcodes already present in data/m0/ytdlp_results.jsonl.
-
-Writes:
-  data/m0/ytdlp_results.jsonl  -- per-item outcome
-  data/m0/media/ytdlp_<shortcode>.*  -- kept only when Apify did NOT succeed
+"""M0 step 3: Fetch B -- yt-dlp, logged OUT, no cookies, on the same 50-item sample, to
+measure its own success rate independently of Apify's. Throttled (10-30s between items),
+stops early after 5 consecutive login-wall/rate-limit errors. Always attempts the fetch even
+where Apify already succeeded, deleting the file right after recording its size in that case.
+Resumable. Writes `ytdlp_results.jsonl` and `media/ytdlp_<shortcode>.*`.
 """
 
 import json

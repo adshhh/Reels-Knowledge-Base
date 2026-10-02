@@ -1,15 +1,9 @@
-"""Dense retrieval: brute-force cosine similarity over a numpy matrix (§5).
-
-Storage is exactly what §5 specifies: ``data/embeddings.npy`` (an (n, 1024) float32 matrix
-for the real BGE-M3 encoder; whatever ``dim`` the encoder used in general) plus the
-``embedding_rows`` table, which is the *only* piece of this that lives in the database --
-row i belongs to ``embedding_rows.item_id`` where ``row = i``. At a couple of thousand items
-this is a few megabytes; a vector database would add a network hop for a problem this size
-doesn't have (§5).
-
-This module holds nothing but a plain matrix and a row index, and does one thing: score a
-query vector against every row. Loading the matrix off disk and matching rows to item_ids is
-the caller's job (``index.py`` for search, ``embed.py`` for writing it).
+"""Dense retrieval: brute-force cosine similarity over a numpy matrix (§5). Storage is
+``data/embeddings.npy`` (an (n, dim) float32 matrix) plus the ``embedding_rows`` table --
+the only piece in the database -- mapping row i to an item_id. A few megabytes at this
+corpus size; a vector database would add a network hop this problem doesn't need. This
+module only scores a query vector against every row; loading and row-matching is the
+caller's job (`index.py`, `embed.py`).
 """
 
 from __future__ import annotations

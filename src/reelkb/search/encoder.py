@@ -1,14 +1,8 @@
 """The ``Encoder`` boundary between the search engine and whatever model produces vectors.
-
-The real encoder (``reelkb.search.embed.BGEM3Encoder``) wraps BGE-M3 and is only ever loaded
-by the embed pipeline stage. Everything in this package that *searches* -- ``index.py``,
-``fusion.py``, and every unit test -- is written against this protocol instead, so unit tests
-build a deterministic ``FakeEncoder`` here and never load a real model (AC-6.2).
-
-BGE-M3 produces two representations per text: a dense vector (semantic similarity) and a set
-of *lexical weights* -- a sparse, token -> weight mapping that behaves like a learned
-TF-IDF (exact-term matching). ``EncodedBatch`` mirrors that shape so the fake and the real
-encoder are interchangeable.
+The real encoder (`embed.BGEM3Encoder`) wraps BGE-M3 and is only loaded by the embed stage;
+everything that searches is written against this protocol, so unit tests use a deterministic
+`FakeEncoder` here instead (AC-6.2). `EncodedBatch` mirrors BGE-M3's two outputs per text --
+a dense vector and sparse lexical weights -- so fake and real stay interchangeable.
 """
 
 from __future__ import annotations

@@ -1,12 +1,8 @@
-"""Choosing which search engine the running app uses.
-
-This exists because of a real gap the M9/M10 checker found: ``create_app`` falls back to
-``SubstringSearcher`` -- the deliberately dumb test double -- whenever no searcher is passed,
-and nothing in the app ever passed one. The product would have shipped with the fake engine
-on real data, silently, with every test green.
-
-The rule here: if the vector files exist, use the real hybrid engine; otherwise fall back and
-say so out loud, so "search feels bad" can never be a mystery.
+"""Choosing which search engine the running app uses. Exists because the M9/M10 checker found
+`create_app` silently falling back to `SubstringSearcher` (the dumb test double) whenever
+nothing passed a real one -- the product would have shipped with the fake engine on real
+data, every test green. Rule here: use the real hybrid engine if the vector files exist,
+otherwise fall back loudly.
 """
 
 from __future__ import annotations

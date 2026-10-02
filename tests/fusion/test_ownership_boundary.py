@@ -1,16 +1,8 @@
-"""AC-3.3 from the fusion side: "OCR output is stored with per-string confidence and
-timestamp, in a field no model writes to." Two independent checks, matching the milestone
-brief:
-
-1. **Behavioural** — fusion's own connection (`connect_stage(db, "fusion")`), used the way
-   `reelkb.fusion.stage.run` actually uses it, cannot write `ocr_verbatim` in any way. This
-   duplicates part of `tests/contract/test_schema_boundaries.py` deliberately: that file
-   proves the *general* rule for every stage/table pair; this one proves *this builder's
-   code* exercises the door the contract expects (`connect_stage(db, "fusion")`), not some
-   other route that happens to work today.
-2. **Static** — the fusion package's own source code never contains an UPDATE or INSERT
-   naming `ocr_verbatim`, so the guarantee doesn't rely on every future edit remembering to
-   test it; a stray SQL string would be caught by grep before it ever ran.
+"""AC-3.3 from the fusion side: OCR output lives in a field no model writes to. Two checks:
+**behavioural** -- fusion's own `connect_stage(db, "fusion")`, used the way `stage.run`
+actually uses it, cannot write `ocr_verbatim` (deliberately overlaps
+`test_schema_boundaries.py`'s general rule, but proves *this* code uses that door); **static**
+-- grep for an UPDATE/INSERT naming `ocr_verbatim` anywhere in the fusion package's source.
 """
 
 from __future__ import annotations

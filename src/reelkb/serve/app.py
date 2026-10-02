@@ -1,14 +1,8 @@
 """The FastAPI app: landing page, category feeds, detail view, search, and curation actions.
-
-Every route opens the database with ``connect_readonly`` (AC-8.2) and calls ``load_cards`` /
-``load_curation`` fresh, on every request, from files it never caches -- so a hide or an edit
-made a second ago is visible on the very next page load (AC-1.3). The one exception is the
-``Searcher``: when the caller doesn't inject a real one (``searcher=None``), search falls back
-to ``SubstringSearcher`` built fresh from the current cards, for the same reason.
-
-Curation actions (hide, unhide, edit, change category) never touch the database. They call
-straight into ``reelkb.contract.curation`` and then redirect back to a GET page
-(POST-redirect-GET), so a phone browser's "reload" never resubmits a form.
+Every route opens the database read-only (AC-8.2) and reloads cards/curation fresh on every
+request, never cached, so a hide or edit is visible on the very next page load (AC-1.3).
+Curation actions call straight into `reelkb.contract.curation`, never the database, then
+redirect to a GET page (POST-redirect-GET) so a phone reload can't resubmit a form.
 """
 
 from __future__ import annotations

@@ -1,24 +1,7 @@
-"""Sparse retrieval: BGE-M3's lexical weights (§5), and the storage format for them.
-
-**Storage format (independent decision, documented here because nothing in the contract
-fixes it -- ``embedding_rows`` in ``schema.sql`` only tracks the dense vector file).**
-Sparse weights are written to ``data/sparse_weights.jsonl``, one JSON object per line:
-
-    {"item_id": "FAKEmv001", "weights": {"flow": 0.34, "cat": 0.21, ...}}
-
-JSON Lines rather than a database table because the write-once/one-owner rules in
-``contract/db.py`` are already fully expressed by ``embedding_rows`` (which stage produced
-this item's vectors, and in what order) -- the *weights themselves* are exactly the kind of
-large, per-item blob the dense vectors already live outside the database for. Keeping both
-vector artefacts as plain files next to ``embeddings.npy`` means the embed stage has one
-place to write large arrays, and the database stays cheap to inspect. Order does not matter
-for this file (lookup is by item_id, not row position), unlike ``embeddings.npy`` where row
-position **is** the join key.
-
-Scoring: a sparse "dot product" between the query's token weights and a document's token
-weights, summed only over tokens present in both -- exactly BGE-M3's own scoring rule for its
-lexical weights, and exactly the same idea whether the weights came from the real model or
-``FakeEncoder``'s token counts.
+"""Sparse retrieval: BGE-M3's lexical weights (§5) -- storage and scoring. Weights go to
+`data/sparse_weights.jsonl` (`save_sparse_weights`), one JSON object per item, a large blob
+the database stays cheap by not holding, like `embeddings.npy`. Scoring (`sparse_dot`) is
+BGE-M3's own rule -- a dot product over tokens present in both -- real model or `FakeEncoder`.
 """
 
 from __future__ import annotations
@@ -28,7 +11,10 @@ from pathlib import Path
 
 
 def save_sparse_weights(path: Path, weights_by_item: dict[str, dict[str, float]]) -> None:
-    """Write ``{item_id: {token: weight}}`` as JSON Lines, one item per line."""
+    """Write ``{item_id: {token: weight}}`` as JSON Lines, one item per line, e.g.
+    ``{"item_id": "FAKEmv001", "weights": {"flow": 0.34, "cat": 0.21, ...}}``. Order doesn't
+    matter here (lookup is by item_id), unlike ``embeddings.npy`` where row position is the
+    join key."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as f:
         for item_id, weights in weights_by_item.items():

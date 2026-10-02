@@ -1,11 +1,8 @@
 """The model client boundary: fusion talks to *some* JSON-completing model through a small
-Protocol, so tests can inject a fake and never load a model or touch the network (AC-6.2).
-
-``GroqFusionClient`` is the real implementation (`openai/gpt-oss-120b` on Groq, per §6/D17).
-It imports the ``groq`` package lazily, inside ``__init__``, not at module load time — the
-unit-test import guard (`tests/conftest.py`) blocks importing ``groq`` anywhere, and this
-module is imported by the fusion stage even when a fake client is used, so a top-level
-``import groq`` would break every unit test, not just ones that need a real client.
+Protocol, so tests inject a fake and never load a model or touch the network (AC-6.2).
+`GroqFusionClient` is the real implementation (`openai/gpt-oss-120b`, §6/D17); it imports
+`groq` lazily inside `__init__`, not at module level, since this module is imported by the
+fusion stage even with a fake client, and a top-level import would break every unit test.
 """
 
 from __future__ import annotations

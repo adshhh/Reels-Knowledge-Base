@@ -1,10 +1,7 @@
-"""AC-3.1 / AC-FIDELITY: "No stored record contains a URL, @handle, or proper-noun title
-absent from that reel's OCR output within edit distance 2."
-
-This is the one test file the milestone is graded on: "The milestone fails if a planted fake
-survives." Every case below is either a planted fake (must be caught) or genuine OCR noise
-(must survive), matching the plan's own examples where the plan gives one (e.g.
-`coursera.org` vs `coursero.org`, distance 1).
+"""AC-3.1 / AC-FIDELITY: no stored record may contain a URL, @handle, or proper-noun title
+absent from that reel's OCR output within edit distance. This is the one file the milestone
+is graded on: "fails if a planted fake survives." Every case is either a planted fake (must
+be caught) or genuine OCR noise (must survive), matching the plan's own examples where given.
 """
 
 from __future__ import annotations

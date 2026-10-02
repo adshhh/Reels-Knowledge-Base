@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
-# PostToolUse(Write|Edit): formats, type-checks and tests after every source edit, and
-# BLOCKS (exit 2) if any of it fails, so the agent sees the failure and must fix it before
-# moving on. This is the mechanism that lets a non-code-reading reviewer trust the word
-# "done" -- the machine owns the boring failure modes, so owner attention goes to judgement.
-#
-# DUAL STACK. This project is Python-first (pipeline, ML, backend) with a JS/TS frontend.
-# The original kit version accepted *.py in its file filter and then exited immediately if
-# there was no package.json -- so every Python edit passed silently. That made the hook
-# decorative for most of this codebase. Both branches are real here.
-#
-# Safe before the project is scaffolded: missing tools, missing package.json and
-# "no tests collected" are skipped, not treated as failures.
-#
-# TEST THIS ON DAY ONE, BOTH BRANCHES. Introduce a deliberate type error in each language
-# and confirm it blocks. Never take a hook on faith.
+# PostToolUse(Write|Edit): formats, type-checks and tests after every source edit, BLOCKING
+# (exit 2) on failure so the agent fixes it before moving on -- the machine owns the boring
+# failure modes, so a non-code-reading reviewer can trust "done". DUAL STACK (Python + the
+# JS/TS branch below): the kit's original version exited before running either check if
+# package.json was absent, silently passing every Python edit. Both branches are real here,
+# and skip cleanly (not as a failure) when a tool or package.json is genuinely missing.
 set -uo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 

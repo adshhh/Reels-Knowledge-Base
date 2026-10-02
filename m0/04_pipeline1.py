@@ -1,74 +1,8 @@
-"""M0 step 4 -- Pipeline 1: local OCR + VAD-gated Whisper + Groq fusion.
-
-For each of the 50 sample items (using whichever media Fetch A/B retrieved,
-preferring Apify's copy):
-
-  Video items:
-    ffmpeg scene-change frame sampling (top 5-8 scene frames + frame 0 +
-    a fixed-interval floor for single-shot reels, deduped) -> Apple Vision
-    OCR (ocrmac, recognition_level='accurate', per-string confidence kept)
-    -> audio extracted -> Silero VAD -> only if speech: Groq
-    whisper-large-v3-turbo -> Groq gpt-oss-120b fusion over
-    caption + OCR text + transcript.
-
-  Carousel/image items (all /p/ posts in this sample came back as
-  carousels -- see data/m0/apify_results.jsonl): OCR every slide image,
-  no audio stage, same fusion call minus the transcript.
-
-Frame sampling method (DECIDED, documented here because §3 leaves the exact
-algorithm unspecified beyond "scene-change ... top 5-8 ... frame 0 ... fixed
-interval floor ... deduped"):
-  1. `ffmpeg -vf "select='gte(scene,0.08)',metadata=print" -f null -` prints
-     each selected frame's pts_time and lavfi.scene_score to stderr. Parsed
-     and sorted by score descending; top SCENE_FRAMES_MAX kept.
-  2. Frame 0 (t=0.0) is always added (the hook-text frame).
-  3. Floor: if fewer than FLOOR_MIN_FRAMES scene-change frames were found
-     (typical of a single continuous shot), fixed-interval frames are added
-     at duration/(FLOOR_COUNT+1) spacing.
-  4. Dedup: sorted by timestamp, any candidate within DEDUP_WINDOW_SEC of an
-     already-kept timestamp is dropped.
-  5. Each surviving timestamp is extracted as its own JPEG via a seeked
-     single-frame ffmpeg call (simple and robust for reel-length video;
-     not the fastest way, doesn't need to be for 50 items).
-
-Unreadable-on-screen-text heuristic (DOCUMENTED, no ground truth available):
-Apple Vision's `recognize()` returns every candidate string down to
-confidence 0.0 (we pass confidence_threshold=0.0 deliberately, see below).
-A frame is counted as "text present but unreadable" when it has at least
-one OCR candidate whose confidence is below UNREADABLE_CONF_THRESHOLD --
-i.e. Vision found and attempted a text region but was not confident in the
-transcription. This is a heuristic, not a ground-truth judgement; the M0
-findings report the count under that caveat.
-
-Sung-vocal / lyric-like transcript heuristic (DOCUMENTED): a transcript is
-flagged "lyric-like" when it contains a repeated phrase of
-LYRIC_NGRAM_WORDS+ words appearing LYRIC_MIN_REPEATS+ times (chorus-style
-repetition), or when >LYRIC_FILLER_RATIO of its words are sung filler
-tokens (la, na, ooh, yeah, oh, mmm, ...). No audio classifier is used; this
-is a cheap text-only proxy and is reported as such.
-
-"Blank" bucket (DOCUMENTED): no VAD speech AND zero OCR strings survive
-BLANK_OCR_MIN_LEN AND the caption, with hashtags stripped, is shorter than
-BLANK_CAPTION_MIN_CHARS -- deliberately the same "uninformative caption"
-threshold `01_sample.py` already uses for hashtag-heavy detection.
-
-Writes (all gitignored, under data/m0/):
-  extract/<shortcode>/frames/*.jpg      -- sampled frames (video only). Carousel
-                                            items are OCR'd and referenced directly
-                                            from media/<shortcode>_slideN.jpg instead
-                                            of being copied -- both are kept on disk
-                                            for the judge.html page either way
-  extract/<shortcode>/audio.wav         -- extracted mono 16kHz audio (video only,
-                                            deleted immediately after VAD+Whisper to
-                                            save disk -- never persisted)
-  pipeline1.jsonl                       -- one aggregate row per item (see RowP1):
-                                            ocr_verbatim, transcript, fusion and
-                                            everything else live ONLY here, not as
-                                            separate per-item ocr.json/fusion.json/
-                                            transcript.txt files (an earlier version
-                                            of this docstring promised those; nothing
-                                            downstream needs them since the aggregate
-                                            row already has every field)
+"""M0 step 4 -- Pipeline 1: local OCR + VAD-gated Whisper + Groq fusion. Video: ffmpeg
+scene-change frame sampling -> Apple Vision OCR -> audio -> Silero VAD -> if speech, Groq
+Whisper -> gpt-oss-120b fusion over caption + OCR + transcript. Carousel: OCR every slide, no
+audio, fusion minus transcript. Writes one row per item to `pipeline1.jsonl` (`RowP1`); frame
+sampling and the unreadable/lyric/blank heuristics are documented inline, below.
 """
 
 import json
@@ -100,6 +34,11 @@ FLOOR_COUNT = 5
 DEDUP_WINDOW_SEC = 1.0
 
 # --- OCR ---
+# Vision's recognize() returns every candidate string down to confidence 0.0 (we pass
+# confidence_threshold=0.0 deliberately). A frame counts as "text present but unreadable"
+# when it has an OCR candidate below this -- Vision found and attempted a text region but
+# wasn't confident in the transcription. Heuristic, no ground truth available; M0 findings
+# report the count under that caveat.
 UNREADABLE_CONF_THRESHOLD = 0.5
 BLANK_OCR_MIN_LEN = 2  # OCR strings shorter than this don't count as "text"
 
@@ -184,7 +123,13 @@ SCENE_SCORE_RE = re.compile(r"lavfi\.scene_score=([\d.]+)")
 
 
 def scene_change_candidates(video_path: Path, duration: float) -> list[float]:
-    """Returns timestamps of the top scene-change frames, by score."""
+    """Returns timestamps of the top SCENE_FRAMES_MAX scene-change frames, by score.
+
+    `select='gte(scene,SCENE_THRESHOLD)',metadata=print` prints each selected frame's
+    pts_time and lavfi.scene_score to stderr; parsed below and sorted by score descending.
+    This is the exact algorithm §3 left unspecified beyond "scene-change ... deduped" --
+    decided and documented here, not in the plan, since it's an implementation detail.
+    """
     _, stderr = run_capture(
         [
             FFMPEG,
@@ -212,6 +157,11 @@ def scene_change_candidates(video_path: Path, duration: float) -> list[float]:
 
 
 def sample_frame_timestamps(video_path: Path, duration: float) -> list[float]:
+    # Frame 0 (t=0.0) is always added -- the hook-text frame. If fewer than
+    # FLOOR_MIN_FRAMES scene-change frames were found (typical of a single continuous
+    # shot, no cuts to key on), a fixed-interval floor fills in at duration/(FLOOR_COUNT+1)
+    # spacing, so a static reel still gets sampled. Final pass dedupes anything within
+    # DEDUP_WINDOW_SEC of an already-kept timestamp.
     scene_ts = scene_change_candidates(video_path, duration)
     candidates = [0.0] + scene_ts
     if len(scene_ts) < FLOOR_MIN_FRAMES and duration > 0:
@@ -358,6 +308,9 @@ def fusion_call(
 
 
 def is_lyric_like(transcript: str) -> bool:
+    """Flags sung/lyric-like transcripts: chorus-style repetition (a LYRIC_NGRAM_WORDS+
+    phrase repeated LYRIC_MIN_REPEATS+ times) or a high ratio of sung filler words (la, na,
+    ooh, yeah...). No audio classifier -- a cheap text-only proxy, reported as such."""
     words = re.findall(r"[a-zA-Z']+", transcript.lower())
     if len(words) < 6:
         return False
@@ -526,6 +479,8 @@ def main():
                 ocr_text_joined = "\n".join(
                     r["text"] for r in row["ocr_verbatim"] if len(r["text"]) >= BLANK_OCR_MIN_LEN
                 )
+                # "Blank": no speech AND no OCR text survives AND the caption (hashtags
+                # stripped) is uninformative -- same threshold 01_sample.py uses.
                 row["blank_bucket"] = (
                     not row["vad_speech"]
                     and not ocr_text_joined.strip()

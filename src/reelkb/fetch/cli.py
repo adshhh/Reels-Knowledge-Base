@@ -1,12 +1,8 @@
 """python -m reelkb.fetch -- Stage 3: vendor fetch + manifest (docs/PLAN.md §2, §8).
-
-    python -m reelkb.fetch [--db data/kb.db] [--via apify|ytdlp] [--limit N]
-                            [--batch-size N] [--dry-run]
-
-Initialises fetch_status for any new items (AC-2.2, AC-2.3), then asks the chosen vendor for
-every 'pending' item (oldest-saved first, capped at --limit if given) and records each
-outcome as soon as it arrives. Safe to interrupt and re-run at any point (AC-8.1): a re-run
-only ever asks for what is still 'pending'.
+``[--db PATH] [--via apify|ytdlp] [--limit N] [--batch-size N] [--dry-run]``. Initialises
+fetch_status for new items (AC-2.2/2.3), asks the chosen vendor for every 'pending' item
+oldest-first, and records each outcome as it arrives. Safe to interrupt and re-run (AC-8.1):
+only ever asks for what's still 'pending'.
 """
 
 from __future__ import annotations

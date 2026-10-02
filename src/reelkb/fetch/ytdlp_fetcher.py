@@ -1,20 +1,8 @@
 """YtDlpFetcher -- logged-out, throttled yt-dlp for monthly top-ups (decisions/002, D18).
-
-Never logs in: no cookies, no browser cookie jar. A random 10-30s delay between items is the
-politeness budget that keeps a top-up batch (<100/month) from tripping a rate limit --
-``m0/03_fetch_ytdlp.py`` established these numbers, and the same 5-consecutive-failure stop
-rule, by running against the real site. After 5 consecutive login-wall/rate-limit-shaped
-errors, this fetcher stops yielding entirely for the rest of the batch: those items are never
-seen by ``run_fetch``, so they stay 'pending' rather than being marked dead or retried in a
-tight loop against a site that has started refusing every request.
-
-Unlike ``m0/03_fetch_ytdlp.py`` (which lets yt-dlp download the file directly), this fetcher
-only *resolves* the direct media URL (``download=False``) and hands it to the shared
-``download.py`` step, so both vendors go through the same isolated, temp-name-then-rename
-download path. This is an independent decision made for M3 (see the build report) and is
-unverified against the real site -- only exercised here by fake fetchers in unit tests, per
-the "no real vendor calls in unit tests" rule; a ``realmodel``-marked test would be the way to
-check it for real.
+Never logs in. A random 10-30s delay and a 5-consecutive-failure stop (see `fetch`) are the
+politeness budget M0 established against the real site. Only *resolves* the media URL (see
+`_extract`), so both vendors share one download path. Unverified for real -- exercised only
+by fakes in unit tests; a `realmodel` test would check it.
 """
 
 from __future__ import annotations
@@ -115,6 +103,9 @@ class YtDlpFetcher:
 
     @staticmethod
     def _extract(yt_dlp_module: Any, url: str) -> tuple[dict[str, Any] | None, str | None]:
+        # download=False: resolves the direct media URL only, same as m0/03_fetch_ytdlp.py's
+        # independent M0 measurement, but unlike it never lets yt-dlp write the file itself --
+        # that's left to the shared download.py step (an M3 decision, see the build report).
         ydl_opts = {
             "quiet": True,
             "no_warnings": True,

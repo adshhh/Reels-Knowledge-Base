@@ -1,10 +1,7 @@
 """Small, local fixtures for fetch tests -- a tiny hand-seeded DB, not the shared fake corpus.
-
-``src/reelkb/testing/fake_db.py`` already writes fully 'fetched' fetch_status rows for its 27
-cards, which is exactly wrong for testing this stage: M3 needs to see fresh items with *no*
-fetch_status row yet, so ``initialise`` and ``run_fetch`` have something to do. Building a
-small DB directly here (via ``init_db`` + ``connect_stage``, the same primitives fake_db.py
-itself uses) keeps that fresh-start behaviour in this test's own hands.
+`fake_db.py` already writes fully 'fetched' rows for its 27 cards, exactly wrong for this
+stage: M3 needs fresh items with *no* fetch_status row yet. Built directly here via `init_db`
++ `connect_stage`, the same primitives fake_db.py uses, to keep that fresh start in hand.
 """
 
 from __future__ import annotations

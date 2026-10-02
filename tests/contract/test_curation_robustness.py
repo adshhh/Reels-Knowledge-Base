@@ -1,13 +1,8 @@
 """A damaged curation log must not take the product down (M7 checker, finding 5).
-
-``curation.jsonl`` and ``corrections.jsonl`` hold the owner's own edits, appended with a
-plain non-atomic write. A disk-full, an interrupted append or a hand-edit can leave one torn
-line -- and before this, that single line raised out of ``load_curation``, which every route
-calls, so the landing page, search, every category page, every item page and ``/eval`` all
-returned HTTP 500 at once.
-
-The rule these tests fix in place: skip what cannot be read, report it, keep every event that
-is still intact, and never rewrite the file.
+`curation.jsonl`/`corrections.jsonl` are appended non-atomically, so a disk-full or
+interrupted write can leave one torn line -- which used to raise out of `load_curation`,
+calling every route and returning HTTP 500 everywhere at once. The rule fixed here: skip
+what can't be read, report it, keep every intact event, never rewrite the file.
 """
 
 from __future__ import annotations

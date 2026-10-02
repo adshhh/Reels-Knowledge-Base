@@ -1,10 +1,7 @@
 """What of a Card actually gets embedded (§5): every non-empty extraction channel plus the
-fusion stage's title and summary, one blob per item, in a fixed order.
-
-Shared by ``embed.py`` (which encodes this text with the real BGE-M3 encoder into the stored
-index) and by tests (which encode the same text with ``FakeEncoder`` to build an in-memory
-index) -- the two must agree on what text a vector represents, or the embed stage and the
-search engine would silently drift apart.
+fusion stage's title and summary, one blob per item, fixed order. Shared by `embed.py` (real
+BGE-M3) and by tests (`FakeEncoder`) -- the two must agree on what text a vector represents,
+or the embed stage and the search engine would silently drift apart.
 """
 
 from __future__ import annotations

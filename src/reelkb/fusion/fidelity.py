@@ -1,36 +1,9 @@
-"""The fidelity gate (AC-3.1 / AC-FIDELITY) — "the single most important correctness
-boundary in the project."
-
-D7: OCR reads, the model interprets, never the reverse. The model is free to *summarise* and
-*organise* what the three channels say, but every URL, @handle, and proper-noun title it
-outputs must be traceable back to source text within edit distance 2, or it is thrown away.
-This is what turns "trust the model" into a test that fails loudly (`test_fidelity_gate.py`)
-the moment a model invents a plausible-looking URL that was never on screen.
-
-Edit distance forgives OCR misreading `l` as `1`, or `coursera.org` as `coursero.org` (both
-distance 1), and the budget scales with length (``allowed_distance``) so that a short entity
-cannot slip through on coincidence.
-
-**What this gate does not do**, stated plainly because an earlier version of this docstring
-claimed otherwise and the M5 checker disproved it: edit distance 2 does *not* guarantee a
-different destination is rejected. `course.fast.io` is 2 edits from `course.fast.ai` and is a
-different site; `coursefast.ai` is 1 edit (a deleted dot) and is a different domain. Those pass.
-The guarantee is narrower and worth stating exactly: **a url, handle or title that resembles
-nothing on screen is rejected.** One that closely resembles something on screen is accepted,
-including when the resemblance is misleading. Homoglyph lookalikes are the one case singled out
-for stricter treatment (see ``is_verified``), because they are indistinguishable by eye.
-
-Proper-noun titles in the card's **prose** are flagged rather than removed -- see
-``_flag_unverified_names`` and ``decisions/004``. AC-3.1 is **not met** as written; that is a
-recorded miss awaiting the owner's post-judging decision, not a redefinition of the target.
-
-Default allowed source is OCR text only (``ocr_only``), exactly as AC-3.1 is written: "absent
-from that reel's OCR output". ``ocr_and_caption`` is implemented but never the default -- it
-weakens the guarantee, so it is a deliberate opt-in that belongs to the owner, not a default
-anyone can drift into. Whether the *transcript* should also count is deferred to the same
-post-judging decision.
-
-No dependency is used for edit distance; it is implemented here (`edit_distance`).
+"""The fidelity gate (AC-3.1 / AC-FIDELITY) -- the single most important correctness
+boundary in the project (D7: OCR reads, the model interprets, never the reverse). Every URL,
+@handle and proper-noun title the fusion model outputs must trace back to the reel's OCR text
+within an edit distance (`allowed_distance`) or it's thrown away -- the exact guarantee, and
+what it deliberately doesn't catch, is on `is_verified` below. Titles in prose are flagged,
+not removed (`_flag_unverified_names`, `decisions/004`). AC-3.1 is **not met** as written.
 """
 
 from __future__ import annotations
@@ -293,6 +266,16 @@ def is_verified(
 
     The edit budget scales with length (``allowed_distance``), so a short entity has to
     genuinely be on screen rather than merely resemble some fragment of the text.
+
+    **What this does not guarantee**, stated exactly because an earlier docstring claimed
+    otherwise and the M5 checker disproved it: passing does *not* mean the candidate's
+    destination is correct, only that it resembles something on screen. `course.fast.io` is
+    within budget of `course.fast.ai` and is a different site; `coursefast.ai` (a deleted
+    dot) is too, and is a different domain. Both pass. The real guarantee is narrower: **a
+    url, handle or title that resembles nothing on screen is rejected** -- one that closely,
+    misleadingly resembles something on screen is accepted. Homoglyphs (visually identical,
+    different character) are singled out for stricter handling below, since they are the one
+    case indistinguishable by eye even to the owner reading the card.
     """
     cand_norm = _normalise(candidate, kind)
     if not cand_norm:

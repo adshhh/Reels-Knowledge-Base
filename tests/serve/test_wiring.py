@@ -1,11 +1,7 @@
-"""The running app uses the REAL search engine when an index exists.
-
-Regression test for the gap the M9/M10 checker found: `create_app` falls back to the dumb
-`SubstringSearcher` when handed no searcher, and nothing ever handed it one -- so the product
-would have shipped with the test double on real data while every test stayed green.
-
-No model is loaded here: `FakeEncoder` stands in for BGE-M3, which is what makes this a unit
-test rather than a realmodel test (AC-6.2).
+"""The running app uses the REAL search engine when an index exists. Regression test for the
+gap the M9/M10 checker found: `create_app` fell back to the dumb `SubstringSearcher` when
+handed no searcher, and nothing ever handed it one. `FakeEncoder` stands in for BGE-M3 here,
+which is what keeps this a unit test rather than realmodel (AC-6.2).
 """
 
 from __future__ import annotations

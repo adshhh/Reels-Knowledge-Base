@@ -1,11 +1,8 @@
-"""A small, made-up knowledge base for building and testing without the real archive.
-
-Every Wave 1 component develops against this. It deliberately contains the awkward cases:
-every combination of empty/non-empty channels, a caption that never names its subject (the
-*Flow*-style canary), Hinglish, unreadable on-screen text, sung lyrics, and non-card items
-(dead, unrecoverable, external). All content is invented.
-
-    python -m reelkb.testing.fake_db data/fake    # writes data/fake/kb.db
+"""A small, made-up knowledge base for building and testing without the real archive. Every
+Wave 1 component develops against this; it deliberately covers the awkward cases (every
+empty/non-empty channel combination, a *Flow*-style caption that never names its subject,
+Hinglish, unreadable text, sung lyrics, non-card items). All content invented. Run
+``python -m reelkb.testing.fake_db data/fake`` to write ``data/fake/kb.db``.
 """
 
 from __future__ import annotations

@@ -1,15 +1,9 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash): blocks any command that invokes git or gh to change repository state.
-#
-# A short allow-list of read-only commands is permitted -- but only as a single, unchained
-# command (no ; & | ` $( anywhere in it), so a read-only command can't be used to smuggle a
-# mutating one alongside it. Ambiguous subcommands that have destructive flag forms
-# (git branch -D, gh pr merge) require an exact match with nothing trailing; safe ones
-# (log/diff/show) may take trailing arguments.
-#
-# THIS IS THE HOOK THAT MAKES BROAD PERMISSIONS SAFE. The one genuinely irreversible,
-# outward-facing verb is blocked here, so everything else can be auto-approved in
-# settings.json without you becoming the gate on `ls`.
+# PreToolUse(Bash): blocks any command that invokes git or gh to change repository state. A
+# short read-only allow-list is permitted, but only as a single, unchained command (no
+# ; & | ` $( anywhere), so it can't smuggle a mutating command alongside it. THIS IS THE HOOK
+# THAT MAKES BROAD PERMISSIONS SAFE: the one irreversible verb is blocked here, so everything
+# else can be auto-approved in settings.json without becoming the gate on `ls`.
 set -uo pipefail
 
 deny() {
@@ -29,6 +23,8 @@ fi
 
 TRIMMED="$(printf '%s' "$CMD" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
 
+# EXACT lists require nothing trailing -- these have destructive flag forms (`git branch -D`,
+# `gh pr merge`) so no arguments may follow. PREFIX lists are safe with any trailing args.
 GIT_EXACT_ALLOWED='^git (status|branch)$'
 GIT_PREFIX_ALLOWED='^git (log|diff|show|rev-parse|remote -v)([[:space:]].*)?$'
 GH_EXACT_ALLOWED='^gh status$'

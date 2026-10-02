@@ -1,10 +1,7 @@
 """Measuring how long a downloaded file plays for, independent of what the vendor claims.
-
-Uses ``ffprobe`` (part of the ffmpeg install at ``/opt/homebrew/bin``, per docs/PLAN.md §6)
-against the file actually on disk, rather than trusting a vendor-reported duration field --
-the file on disk is the thing that has to be true. Never raises: a missing binary, a missing
-file, or a non-media file (e.g. a still image) all just mean "no duration", which is a normal
-answer for an image post.
+Uses `ffprobe` (docs/PLAN.md §6) against the file actually on disk rather than trusting a
+vendor-reported field. Never raises: a missing binary, missing file, or non-media file (a
+still image) all just mean "no duration", a normal answer for an image post.
 """
 
 from __future__ import annotations

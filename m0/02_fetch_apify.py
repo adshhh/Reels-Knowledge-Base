@@ -1,68 +1,9 @@
-"""M0 step 2: Fetch A -- Apify memo23/instagram-video-downloader on the 50-item sample.
-
-Actor verified live via the Apify API on 2026-09-19:
-  id    = piwPghZZql1jcdYcH
-  name  = memo23/instagram-video-downloader
-  title = "Instagram Video Downloader: Reels, Carousels - No Expiry"
-
-Pricing (PAY_PER_EVENT, confirmed via actor API): actor-start $0.005 (one-off
-per run, min 1 event), post processed $0.002/item, video-download $0.003/file,
-image-download $0.001/file.
-
-DISCOVERED BY RUNNING (not documented in the actor README): this Apify
-account is non-paying (`user_is_paying: '0'` in the run's ACTOR_ENV log), and
-the actor enforces an undocumented per-run billable-event cap for non-paying
-accounts ("[CHARGING] Effective billable-item budget this run: 5"). A single
-post typically costs 4 billable events (start + dataset-item + video +
-cover), so a 50-item `posts` array silently truncated to 1 item processed on
-the first run. Workaround: one actor call per item, sequential. Cost is the
-same either way (~$0.005-0.011/item observed); this only changes run count
-and adds per-run startup latency (~5-9s).
-
-DIAGNOSED 2026-09-19 -- the 403 on download: this actor's `storeFiles: True`
-option re-hosts media to `https://api.apify.com/v2/key-value-stores/...`
-URLs. Under this non-paying account those key-value-store URLs are PRIVATE
-(not documented anywhere -- the actor README implies they're public,
-permanent links). A plain GET 403s; appending the Apify token as a query
-param (`?token=...`) succeeds. Confirmed directly: the same URL from
-data/m0/apify_raw.jsonl returned HTTP 403 with no token and HTTP 200 (full
-file, correct byte count) with the token appended, for both a `videoUrl` and
-a carousel `coverUrl`. The `download()` fix below was already present in
-code from a prior session but had never been re-run against the 9 rows that
-failed before the fix existed -- those 9 stale "error" rows in
-apify_results.jsonl are reprocessed from the already-stored raw rows below,
-at zero additional Apify cost (no new actor call, just a re-download).
-
-Input schema (confirmed via /v2/actor-builds/{id}, actorDefinition.input):
-  posts: array[str]            -- full URLs or bare shortcodes
-  downloadVideo: bool = true
-  downloadCover: bool = true
-  downloadCarouselImages: bool = true
-  downloadMusic: bool = false
-  storeFiles: bool = true       -- re-hosts to a permanent URL (needed: IG CDN
-                                    links expire in hours)
-  maxFileSizeMb: int = 100
-
-Carousels: dataset rows put per-slide media under `slides[]` (each with its
-own `imageUrl`/`videoUrl`), not under the top-level `videoUrl`/`coverUrl`.
-DECIDED INDEPENDENTLY: download every slide (not just the cover), since a
-carousel's text/course-info is often spread across slides and the OCR
-pipeline needs all of them. Noted for the M0 checkpoint.
-
-Resumable, at the row level. A shortcode counts as DONE only once it has a
-"success" or a real "dead" (actor-reported, e.g. deleted/private post)
-result. A shortcode whose only result is a download-time "error" is retried
-using the raw dataset row already on disk if one exists (no new actor call,
-no new cost); only a shortcode with neither a usable raw row nor a
-success/dead result triggers a fresh (billed) actor call.
-
-Writes:
-  data/m0/apify_raw.jsonl      -- full dataset rows (personal content; gitignored)
-  data/m0/apify_results.jsonl  -- per-item outcome (success/dead/error, media
-                                   type, file size, duration, cost). Rewritten
-                                   in full each run (not appended) so a
-                                   reprocessed item has exactly one row.
-  data/m0/media/<shortcode>.*  -- downloaded media files
+"""M0 step 2: Fetch A -- Apify `memo23/instagram-video-downloader` on the 50-item sample. One
+actor call per item (sequential -- see the billable-cap bug at its fix site below),
+downloading every carousel slide as well as videos. Resumable at the row level. Two real bugs
+found and fixed while building this are written up in `docs/M0_FINDINGS.md` §3, not
+duplicated here. Writes `apify_raw.jsonl`, `apify_results.jsonl` and `media/<shortcode>.*`,
+all gitignored.
 """
 
 import json
@@ -84,9 +25,9 @@ APIFY_BUDGET_USD = 2.50  # soft cap for this vendor within the $6 total M0 budge
 
 
 def download(url: str, dest: Path) -> int:
-    # See "DIAGNOSED" note at the top of this file: re-hosted key-value-store
-    # URLs are private under this non-paying account -- a plain GET 403s.
-    # Appending the Apify token as a query param fixes it.
+    # Re-hosted key-value-store URLs are private under this non-paying account -- a plain
+    # GET 403s (undocumented; the actor README implies they're public). Appending the Apify
+    # token as a query param fixes it. Full detail: docs/M0_FINDINGS.md §3.
     if "api.apify.com/v2/key-value-stores/" in url and "token=" not in url:
         sep = "&" if "?" in url else "?"
         url = f"{url}{sep}token={os.environ['APIFY_TOKEN']}"
@@ -251,7 +192,11 @@ def main():
             reprocessed += 1
     print(f"reprocessed {reprocessed} item(s) from existing raw data")
 
-    # Pass 2: fresh actor calls for anything still not terminal.
+    # Pass 2: fresh actor calls for anything still not terminal -- ONE PER ITEM, not a
+    # single `posts: [...]` call with all of them. This account is non-paying and the actor
+    # enforces an undocumented 5-billable-event-per-run cap; a single batched call silently
+    # truncated to its first item. Cost per item is unchanged; this only costs run-count and
+    # per-run startup latency. Full detail: docs/M0_FINDINGS.md §3.
     todo = [item for item in sample if not is_terminal(results.get(item["shortcode"]))]
     print(f"remaining items needing a fresh actor call: {len(todo)}")
 

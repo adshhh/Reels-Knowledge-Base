@@ -311,6 +311,26 @@ stricter than what this test's prompt allowed).
    paraphrases roughly a third of the time (65%).** This is exactly the failure mode D7
    predicts for a model reading pixels directly instead of through OCR, and it's the
    strongest single piece of evidence in this bake-off for keeping D7 as written.
+
+   > **Correction, 2026-09-27, after the owner's blind judgement (§12).** "Fabricates" is
+   > not supported as written. The 7 pipeline-2 URLs missing from the OCR text come from
+   > just 3 reels, and inspecting them shows the machine check was measuring **OCR's blind
+   > spots as much as the model's inventions**. Pipeline 1's OCR reads a handful of sampled
+   > frames, while pipeline 2 watches the whole video:
+   > - **1 URL** was genuinely on screen — OCR saw it and mangled it into nonsense. Real, but
+   >   incidental background text the owner judged irrelevant.
+   > - **1 URL** was real, never captured by OCR at all, and was the piece of the reel the
+   >   owner called most important. Pipeline 1 produced no URL for that reel.
+   > - **5 URLs** came from one carousel of small-font dataset screenshots, where OCR
+   >   returned only garbage digits. The owner judged pipeline 2 got **most** of them right;
+   >   the wrong ones were **approximated to the site root** rather than invented outright.
+   >
+   > So pipeline 1's 100% is partly an artefact: it can only cite what OCR read, and on
+   > these reels OCR read less than the video contained. The real risk from pipeline 2 is
+   > narrower than "a third are fabricated" — **it approximates a URL it cannot read
+   > cleanly**, which is still precisely D7's "wrong by one word" failure, and still means
+   > its URLs cannot be trusted unchecked. The owner flagged wrong links on **2 of 50** items
+   > for pipeline 2 and **3 of 50** for pipeline 1.
 2. **Handles are the surprise: pipeline 1 only reaches 59%, not the ~100% its own prompt
    should produce.** Manually inspecting the ungrounded pipeline-1 handles (e.g. items
    sampled from Travis Scott / "Utopia"-branded content) shows the fusion model producing
@@ -400,27 +420,75 @@ reason to expect a problem.
 
 ---
 
-## 12. PENDING owner judgement
+## 12. Owner's blind judgement (completed 2026-09-27)
 
-**Not yet done — requires the owner.** `data/m0/judge.html` is built and ready
-(`data/m0/judge_key.json` holds the X/Y→pipeline mapping, kept separate from the page itself
-so the blinding is real even under "view source"). It presents, per item: 3 sampled frames,
-caption, OCR text, transcript, and both pipelines' fusion output labelled "Output X"/"Output
-Y" in a randomised-per-item order. For each item the owner judges: does X name the subject
-(yes/partly/no), same for Y, any wrong URL/handle spotted in X, in Y, plus a free-text note.
-A Save button downloads the judgements as `judgements.json`, which the owner should place at
-`data/m0/judgements.json`.
+The owner judged all 50 items in `data/m0/judge.html` without knowing which pipeline was
+"Output X" and which was "Output Y" (randomised per item: pipeline 1 was X on 28, pipeline 2
+on 22). The key was opened only after `data/m0/judgements.json` was saved. Reproduce every
+number below with `m0/08_unblind_judgements.py`.
 
-**What this document cannot tell you without that step:** which pipeline actually produces
-*better* human-judged subject-naming quality (§9 above only measures automatic
-grounding/fidelity, a different and narrower question), and how the owner's own read of
-"wrong URL/handle" compares to the automatic edit-distance check in §9 — the two are
-expected to roughly agree given §9's findings, but that's exactly the kind of assumption a
-`checker`-style independent judgement should confirm rather than one document asserting on
-its own.
+**How preference was read.** The checkboxes only record whether each output named the
+subject; on 33 of 50 items both said "yes", so they cannot say which output was *better*.
+The owner wrote that in each item's free-text note. The lead turned each note into X / Y /
+tie in `data/m0/judgement_coding.json` (local, since it is keyed by reel), flagging every
+reading that was not clear-cut so the owner can overrule it. Five were flagged; the result
+barely moves without them.
 
-**Feeds directly into the §6 model gate (D14):** once judged, this is the deciding evidence
-for whether pipeline 1 (OCR-grounded, cheaper wall-time for videos, provably 100% URL-faithful
-here) or pipeline 2 (Gemini, slower, provably less URL-faithful, but able to name subjects
-OCR never captures — see the *Flow* canary in §9) — or some hybrid — is the production
-choice for M4/M5.
+### The result
+
+| | Pipeline 1 (Vision OCR + Whisper + gpt-oss-120b) | Pipeline 2 (Gemini Flash-Lite, whole video) | Tie |
+|---|---|---|---|
+| **Owner preferred** | **5** | **31** | 14 |
+| Named the subject (yes / partly / no) | 33 / 12 / 5 | **50 / 0 / 0** | |
+| Wrong link flagged by owner | 3 | 2 | |
+
+- **The preference is not noise.** A sign test — how likely a split this lopsided is if the
+  two were really equal — gives **p < 0.001**, and still p < 0.001 with the 5 flagged notes
+  removed (5 / 28 / 12).
+- **No position bias.** Pipeline 2 won 15 times as X and 15 as Y.
+- **Pipeline 2 named the subject on every item; pipeline 1 missed or half-got 17.** On all
+  17 of those, pipeline 2 got it. The reverse never happened.
+
+### By kind of reel — the routing question
+
+The owner tagged each note with a category, to test whether a different pipeline should
+handle different kinds of reel.
+
+| Category family | Pipeline 1 | Pipeline 2 | Tie | p |
+|---|---|---|---|---|
+| Movie / TV recommendations (n=20) | 1 | 14 | 5 | < 0.01 |
+| Miscellaneous (n=15) | 1 | 9 | 5 | 0.02 |
+| **Learning & career (n=11)** | **3** | **6** | 2 | 0.51 |
+| Music, YouTube, food (n=4) | 0 | 2 | 2 | — |
+
+**Pipeline 2 wins everywhere, but by far the least on learning and career reels** — the ones
+full of URLs, course names and handles, where reading on-screen text exactly matters most.
+That is the only place pipeline 1 is competitive. n=11 is far too few to call it a real
+effect (p = 0.51); it is a direction worth watching, not evidence for routing.
+
+By reel property — carousel vs video, speech vs none, readable vs unreadable text,
+informative vs uninformative caption — pipeline 2 wins every subgroup. Nothing here suggests
+a property of the reel that makes pipeline 1 the better choice.
+
+### Where the owner's judgement and §9's machine check disagree
+
+§9 predicted the owner's wrong-link flags would roughly agree with its automated count. They
+do not: §9 marks 7 pipeline-2 URLs as unsupported, and the owner flagged wrong links on only
+2 items. The correction written under §9's first finding explains why — most of those 7 were
+real text OCR failed to read, not inventions. **The machine check is only as good as the
+OCR it checks against.**
+
+### Caveats
+
+- **One judge, 50 items, deliberately hard ones.** Only 9 were random. This measures which
+  pipeline handles the hard cases better, not the typical reel.
+- **The owner saw 3 frames per reel, not the whole video.** He could not verify text shown
+  outside those frames any better than OCR could, so a plausible URL he could not check may
+  have been given the benefit of the doubt.
+- **One note named the wrong letter** (item 42: the note credits "X" with a URL that only
+  Y's output contains; the checkbox agreed with Y). Coded as Y and flagged. It is worth the
+  owner confirming, and it is a reason to spot-check the other notes that make specific
+  claims.
+
+**Feeds directly into the §6 model gate (D14)** — which pipeline, or which combination, is
+used for M4/M5. That is the owner's decision; this section is the evidence.

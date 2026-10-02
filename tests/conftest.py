@@ -1,13 +1,8 @@
-"""Guards that apply to every unit test (AC-6.2).
-
-1. No network: any attempt to open a connection or resolve a hostname fails the test.
-2. No models, no vendors: importing a model library or a vendor client fails the test.
-
-Both are installed at import time, before any test module is collected, so even a
-module-level ``import torch`` in a test file is caught. Tests marked ``realmodel`` are
-skipped unless REELKB_ALLOW_MODELS=1, which also switches both guards off:
-
-    REELKB_ALLOW_MODELS=1 pytest -m realmodel
+"""Guards that apply to every unit test (AC-6.2): no network (any connection/hostname lookup
+fails the test), and no models or vendor clients (importing one fails the test). Both install
+at import time, before any test module is collected, so even a module-level `import torch`
+is caught. `realmodel`-marked tests are skipped and both guards switch off under
+``REELKB_ALLOW_MODELS=1 pytest -m realmodel``.
 """
 
 from __future__ import annotations

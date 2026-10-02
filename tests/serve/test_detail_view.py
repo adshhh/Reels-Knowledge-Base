@@ -1,11 +1,8 @@
 """AC-1.2: every card's detail view shows every non-empty channel labelled by source, omits
-empty channels, and always links to the original Instagram URL.
-
-Runs over every one of the 27 fake cards (fake_db.REELS), not a sample, so every awkward
-combination the fake corpus was built to cover (all-empty-but-one, all three channels, etc.)
-gets checked. The expected channel set is computed independently from the raw REEL fixture
-fields (caption / ocr / transcript), not from Card.channels(), so this doesn't just assert
-the app agrees with the contract layer's own logic.
+empty ones, and links to the original Instagram URL. Runs over all 27 fake cards, not a
+sample, so every awkward combination the fixture covers gets checked, with the expected
+channel set computed independently from the raw fields -- not from `Card.channels()` -- so
+this doesn't just assert the app agrees with its own layer's logic.
 """
 
 from __future__ import annotations

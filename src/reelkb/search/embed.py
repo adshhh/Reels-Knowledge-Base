@@ -1,20 +1,8 @@
-"""The embed pipeline stage (M8): ``python -m reelkb.search.embed``.
-
-Reads every fused item from ``data/kb.db``, encodes its text (``card_text.text_for_card``)
-with real BGE-M3, and writes:
-
-- ``data/embeddings.npy`` -- the dense matrix, row i = the i-th item processed.
-- ``data/sparse_weights.jsonl`` -- the sparse (lexical-weight) file, see ``sparse.py``.
-- ``embedding_rows`` in the database (via ``connect_stage(db, "embed")``) -- which row of
-  ``embeddings.npy`` belongs to which item_id (§5, ``schema.sql``).
-
-BGE-M3 is loaded through ``FlagEmbedding`` -- fp16, small batches, one stage of the pipeline
-alive at a time (§6: 8 GB of RAM total). The import is inside ``BGEM3Encoder.__init__``, not
-at module level, so importing this module (e.g. for its CLI argument parsing, or from a test
-that never constructs the real encoder) never triggers the unit-test import guard in
-``tests/conftest.py`` -- only actually building a ``BGEM3Encoder`` does, which unit tests
-never do (AC-6.2). The real-model path is proven by ``tests/search/test_embed_realmodel.py``,
-marked ``@pytest.mark.realmodel``.
+"""The embed pipeline stage (M8): ``python -m reelkb.search.embed``. Reads every fused item
+from ``data/kb.db``, encodes its text with real BGE-M3 (`BGEM3Encoder`), and writes the dense
+matrix, the sparse weights (`sparse.py`), and `embedding_rows` (which row is which item_id).
+Real-model path proven by `test_embed_realmodel.py`; see `BGEM3Encoder.__init__` for why
+loading it is import-guard safe for unit tests.
 """
 
 from __future__ import annotations

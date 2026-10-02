@@ -294,3 +294,84 @@ into that line, and the same line now appears on list and search results.
 **Why / trade-off.** A knowledge base whose entries cannot be traced to a source is a pile of
 assertions. **What was given up:** a little horizontal space on the card, and one more outbound
 link per card on list pages.
+
+---
+
+## 13. Gemini reads the reel, with OCR text in its prompt (closes the fusion row of the §6 gate)
+
+**The situation.** M0's blind judgement put Gemini Flash-Lite, watching the whole video, ahead
+of the OCR + Whisper + gpt-oss-120b pipeline 31 to 5 (14 ties, p < 0.001). Of the 22 clear-cut
+wins, 18 were movie/TV or miscellaneous reels, won on naming titles correctly and on
+understanding what the reel showed -- none on link accuracy. The owner flagged a wrong link on
+only 2 of 50 Gemini cards (3 of 50 for pipeline 1). D7's founding fear, a model inventing links,
+did not show up at a rate that outweighs the quality gap.
+
+**Options considered.**
+1. Pipeline 1, improved -- prompt rewritten from the owner's notes, title check made
+   word-by-word. ~$0.75, but it never sees the picture, so it cannot win the reels it lost on
+   "what the reel was depicting".
+2. Groq's free vision model (`qwen3.8-27b`) -- 3 still frames, no audio, ~72 days on the free
+   tier's 200K tokens/day. Untested.
+3. Gemini alone. ~$3.10.
+4. Gemini with OCR as an after-the-fact check that flags what OCR cannot confirm.
+5. **Gemini with the OCR text handed to it in the prompt**, so it can recover small or brief
+   text it missed and check itself before writing. ~$3.30–3.80 standard, ~$1.70–1.90 batch.
+
+**Decision.** Option 5 (the owner's proposal). Gemini watches the video (frames and audio); local
+Apple Vision OCR still runs, is still stored verbatim and immutable in `ocr_verbatim`, and its
+text goes into Gemini's prompt. D7 is superseded by D19; see `decisions/005`.
+
+**Why / trade-off.** Gemini samples one low-resolution frame per second, which is the likely
+cause of the URLs it approximated in M0. OCR's exact text restores the small print for a few
+cents instead of tripling the cost with high-resolution frames, and catches text shown for under
+a second. **What was given up:** the structural guarantee that the model only ever interprets
+text OCR already read -- a link can now originate from the model's own reading, and the gate
+checking it against OCR is weaker than the reader it checks. All 1,870 reels' video and audio go
+to Google. The run costs ~$3–4 more than pipeline 1, and depends on a hosted model that can
+change under us.
+
+---
+
+## 14. Bulk videos via yt-dlp, Apify for carousels only
+
+**The situation.** M0 found the all-Apify fetch would cost ~$23.24, not the planned ~$3.74.
+
+**Options considered.** All-Apify ($23.24, vendor proxies, one path); yt-dlp for videos with
+Apify for carousels and failures ($2.85).
+
+**Decision.** yt-dlp + Apify. See `decisions/006`.
+
+**Why / trade-off.** yt-dlp fetched 97% of M0 videos, logged out, so the owner's account is
+never touched. **What was given up:** rate limits land on the owner's home connection, the run
+takes about a day, and there are two fetch paths to maintain.
+
+---
+
+## 15. Unhide kept
+
+**The situation.** A Wave 1 builder added `unhide` against D15's "permanent".
+
+**Options considered.** Revert it; keep it and amend D15.
+
+**Decision.** Keep it. See `decisions/007`.
+
+**Why / trade-off.** Hiding was already a soft delete; unhide only recovers a mis-tap. **What was
+given up:** a hide is no longer final.
+
+---
+
+## 16. Owner control over categories, and a links section
+
+**The situation.** The owner asked to put a card in several categories and to edit the category
+list himself, as a fallback when the model gets something wrong. A gap was also found: extracted
+links were stored but not shown.
+
+**Options considered.** For multiple categories: (A) one main category from the classifier plus
+extras the owner adds; (B) a multi-label classifier. For the list: rename, add, merge, delete.
+
+**Decision.** (A); rename, add and delete (delete moves cards to a chosen category or `other`);
+and a Links & titles section on every card. See `decisions/008`.
+
+**Why / trade-off.** (A) gives full control without rebuilding the grading, the holdout
+labelling or §7's thresholds; (B) would have reopened all three. **What was given up:** extra
+categories are invisible to the grading, and the taxonomy can now drift after labelling.

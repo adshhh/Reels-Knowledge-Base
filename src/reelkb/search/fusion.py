@@ -1,19 +1,9 @@
 """Combining the dense-similarity ranking and the sparse-similarity ranking into one score.
-
-Two methods, chosen independently for this project (see the final report for why):
-
-- ``"weighted_sum"`` (the default): min-max normalise each ranking's raw scores to [0, 1]
-  *within this result set*, then combine ``alpha * dense + (1 - alpha) * sparse``. Simple,
-  and keeps the two halves comparable even though cosine similarity and lexical-weight dot
-  products live on different scales.
-- ``"rrf"`` (Reciprocal Rank Fusion): score = sum over rankings of ``1 / (k + rank)``. Scale-
-  free by construction -- useful if the raw scores ever turn out to be noisy or miscalibrated
-  -- at the cost of ignoring *how much* better one hit is than the next.
-
-Both take item_id -> raw score mappings, one per method, and return a single ranked list of
-(item_id, fused_score), highest first. An item present in only one input ranking is still
-scored -- min-max normalisation treats a missing item's score as 0 before combining, and RRF
-simply skips the ranking it's absent from.
+``"weighted_sum"`` (default): min-max normalise each to [0, 1], combine `alpha * dense +
+(1 - alpha) * sparse`. ``"rrf"``: `sum(1 / (k + rank))` over rankings -- scale-free, at the
+cost of ignoring *how much* better one hit is. Both return one ranked (item_id, score) list,
+highest first; an item in only one input ranking is still scored. See `_ranks` for the two
+real bugs the RRF path had.
 """
 
 from __future__ import annotations

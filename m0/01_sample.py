@@ -1,17 +1,8 @@
-"""M0 step 1: sample 50 hard items from the DM export.
-
-Reads data/raw/message_1.json, decodes mojibake captions, extracts Instagram
-shortcodes from share links, and writes a seeded, reproducible 50-item sample
-to data/m0/sample.jsonl for the extraction bake-off.
-
-Sample composition (per M0 task spec):
-  - 1  the Flow canary (caption contains both "visually stunning" and "Kuma")
-  - 15 empty or <40-char captions
-  - 10 /p/ posts
-  - 10 hashtag-heavy captions (mostly hashtags)
-  - 5  Hindi hints (Devanagari chars or common Hinglish words)
-  - 9  random
-  = 50
+"""M0 step 1: sample 50 hard items from the DM export (per M0 task spec). Reads
+data/raw/message_1.json, decodes mojibake captions, extracts Instagram shortcodes from share
+links, and writes a seeded, reproducible 50-item sample to data/m0/sample.jsonl for the
+extraction bake-off. The exact stratified composition (Flow canary, empty captions, `/p/`
+posts, hashtag-heavy, Hindi hints, random) is in the `take()` calls below, not restated here.
 """
 
 import json

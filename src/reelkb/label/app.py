@@ -1,20 +1,8 @@
-"""The labelling app: ``create_app(data_dir, searchers=None)`` builds the FastAPI application.
-
-Two jobs (PLAN.md §7):
-
-1. **Holdout labelling** — walk a frozen, stratified 150-item sample one card at a time and
-   record the owner's category judgement to ``eval/holdout_v1.jsonl``. The classifier's own
-   category for the item is never sent to the template (see ``_categories``/``holdout_item``:
-   the button list comes from the taxonomy table, not from the item's ``classification`` row,
-   and nothing in the response ever reveals which one the model picked).
-2. **Query judging** — the owner types a query, the page pools and shuffles the top results
-   from every configured ``Searcher``, and the owner grades each 2/1/0, saved to
-   ``eval/queries_v1.jsonl``.
-
-The database is opened ``connect_readonly`` only (this page never writes to ``kb.db``); its
-own state (the frozen sample, the salt, the hid lookup) lives under ``data_dir``, and the two
-fixture files live in the sibling ``eval/`` directory, matching the project's top-level layout
-(``data/`` local-only, ``eval/`` committed with hashed ids per docs/CONTRACT.md).
+"""The labelling app: `create_app(data_dir, searchers=None)` builds the FastAPI application.
+Two jobs (PLAN.md §7): **holdout labelling** (150-item sample, category judgement to
+`eval/holdout_v1.jsonl`, blinded against the model's own pick -- see `_categories`) and
+**query judging** (pooled, shuffled results graded 2/1/0 to `eval/queries_v1.jsonl`). Opens
+`kb.db` read-only; its own state lives under `data_dir`, fixtures in sibling `eval/`.
 """
 
 from __future__ import annotations

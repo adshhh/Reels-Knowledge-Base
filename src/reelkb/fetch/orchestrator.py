@@ -1,10 +1,7 @@
-"""Turning a Fetcher's per-item results into fetch_status rows, one item at a time.
-
-The core AC-8.1 guarantee lives here: ``run_fetch`` writes and commits the database (and, for
-a success, the file is already renamed into place first) for *each* item as its result
-arrives from the fetcher's generator -- never batched into one big transaction at the end. If
-the process is killed (or the fetcher raises) after N results, those N items are already
-terminal on disk; a fresh run only ever asks for what's still 'pending'.
+"""Turning a Fetcher's per-item results into fetch_status rows, one item at a time. The core
+AC-8.1 guarantee lives here: `run_fetch` writes and commits the database (file already
+renamed into place first, on success) for *each* item as it arrives -- never batched. A kill
+after N results leaves those N terminal on disk; a fresh run only asks for what's 'pending'.
 """
 
 from __future__ import annotations

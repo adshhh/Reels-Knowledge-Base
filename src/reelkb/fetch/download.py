@@ -1,16 +1,8 @@
-"""Getting a vendor's media URL(s) onto disk.
-
-Deliberately its own small module, separate from the fetchers, for two reasons:
-
-1. **AC-8.1** -- writes go to a temp name and are renamed into place only once the bytes are
-   all there, so a kill mid-download can never leave a file that looks fetched but isn't.
-2. **The Apify 403.** ``m0/02_fetch_apify.py`` found that this vendor's re-hosted
-   key-value-store URLs need the Apify token appended as a query param to download (a plain
-   GET 403s, undocumented). An M0 agent is still diagnosing that in ``m0/`` as of this build.
-   Keeping "fetch these bytes" in one small function with a single well-named hook
-   (``url_fixup``) means that fix -- or whatever M0 lands on instead -- drops in here without
-   touching the fetchers, the orchestrator, or the tests (which inject a fake downloader and
-   never take this code path at all).
+"""Getting a vendor's media URL(s) onto disk. Its own small module, separate from the
+fetchers, for AC-8.1 (writes go to a ``.part`` temp name, renamed into place only once
+complete, so a kill mid-download never leaves a file that looks fetched but isn't) and so a
+vendor-specific URL quirk -- like Apify's 403 on re-hosted URLs, `apify_url_fixup` -- drops in
+through one hook (``url_fixup``) without touching the fetchers or the orchestrator.
 """
 
 from __future__ import annotations
@@ -28,7 +20,8 @@ UrlFixup = Callable[[str], str]
 
 
 def apify_url_fixup(url: str) -> str:
-    """The one fix M0 has found so far for the Apify 403 (see module docstring)."""
+    """Appends the Apify token to re-hosted key-value-store URLs, which 403 without it on a
+    non-paying account (undocumented; found running M0, `docs/M0_FINDINGS.md` §3)."""
     if "api.apify.com/v2/key-value-stores/" in url and "token=" not in url:
         token = os.environ.get("APIFY_TOKEN")
         if token:

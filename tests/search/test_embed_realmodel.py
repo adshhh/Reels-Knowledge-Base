@@ -1,13 +1,8 @@
-"""Proves the real BGE-M3 path works, on the tiny fake corpus only.
-
-Skipped by the normal unit run (``tests/conftest.py`` skips ``realmodel`` tests unless
-``REELKB_ALLOW_MODELS=1``). Loads ~2 GB of model weights and takes real wall-clock time, so it
-is run deliberately and alone, e.g.:
-
-    direnv exec . .venv/bin/python -m pytest -m realmodel tests/search/test_embed_realmodel.py
-
-never as part of ``check.sh`` or the default ``pytest`` invocation (§6: one model-holding
-process at a time, and unit tests must never load a model, AC-6.2).
+"""Proves the real BGE-M3 path works, on the tiny fake corpus only. Skipped by the normal
+unit run (`conftest.py` skips `realmodel` tests unless `REELKB_ALLOW_MODELS=1`). Loads ~2 GB
+of weights and takes real wall-clock time, so run deliberately and alone:
+``direnv exec . .venv/bin/python -m pytest -m realmodel tests/search/test_embed_realmodel.py``
+-- never as part of `check.sh` (§6: one model-holding process at a time, AC-6.2).
 """
 
 from __future__ import annotations

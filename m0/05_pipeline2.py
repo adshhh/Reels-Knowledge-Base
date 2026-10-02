@@ -1,37 +1,9 @@
-"""M0 step 5 -- Pipeline 2: Gemini gemini-3.5-flash-lite on the whole video/
-image, plus caption. No OCR, no transcript, no separate reading step -- the
-model watches/reads the raw media itself and is asked for the same JSON
-schema pipeline1's fusion step produces.
-
-This exists to be *compared* against pipeline 1, not to replace it. §3 (D7)
-says OCR reads and the model interprets, never the reverse; pipeline 2
-deliberately breaks that boundary on purpose, so M0 can measure in dollars
-and in fabricated-URL count what breaking it costs. See
-docs/DESIGN_RATIONALE.md #10 for why the free tier is acceptable here
-(content judged non-sensitive by the owner) and docs/CONTRACT.md "What
-leaves this machine" for the disclosure this script is entry for: whole
-video/image bytes go to Google, not just text.
-
-Media: whichever files Apify fetched (see data/m0/apify_results.jsonl),
-matching pipeline1's precedence. Video items send the video file; carousel
-items send every slide *image* (mp4 slides skipped, same documented
-simplification as pipeline1, for parity between the two pipelines' inputs).
-
-Uses the Gemini File API (client.files.upload) rather than inline base64,
-because several sample videos (up to ~16.7 MB) would push an inline request
-close to Gemini's ~20MB request-size ceiling once base64-encoded -- the File
-API has no such problem and is the documented path for video anyway.
-
-Free tier: no per-call dollar cost, but usage_metadata token counts are
-recorded anyway (in case a paid-tier estimate is ever wanted), and calls are
-paced with a fixed delay plus retry-with-backoff on 429 to respect the free
-tier's per-minute rate limit, which is the real constraint on this stage.
-
-Resumable at the row level (skips shortcodes already in pipeline2.jsonl).
-
-Writes:
-  data/m0/extract/<shortcode>/pipeline2.json  -- raw Gemini output + timing
-  data/m0/pipeline2.jsonl                     -- one aggregate row per item
+"""M0 step 5 -- Pipeline 2: Gemini gemini-3.5-flash-lite reads the whole video/image itself
+(no OCR, no transcript), returning the same JSON schema pipeline 1 produces. Exists only to
+be *compared* against pipeline 1: deliberately breaks D7 ("OCR reads, never the reverse") so
+M0 can measure what breaking it costs. Not production code -- see `DESIGN_RATIONALE.md` #10
+for the free-tier approval and `CONTRACT.md` "What leaves this machine". Writes
+`extract/<shortcode>/pipeline2.json` and the aggregate `pipeline2.jsonl`; resumable.
 """
 
 import json
@@ -98,6 +70,9 @@ def already_done() -> set[str]:
 
 
 def upload_and_wait(client: genai.Client, path: Path) -> types.File:
+    # The File API, not inline base64: some sample videos (up to ~16.7 MB) would push an
+    # inline request close to Gemini's ~20MB ceiling once base64-encoded; the File API has
+    # no such limit and is the documented path for video anyway.
     f = client.files.upload(file=str(path))
     t0 = time.time()
     while f.state == types.FileState.PROCESSING:
@@ -106,6 +81,9 @@ def upload_and_wait(client: genai.Client, path: Path) -> types.File:
                 f"file {path.name} still PROCESSING after {UPLOAD_POLL_TIMEOUT_SEC}s"
             )
         time.sleep(UPLOAD_POLL_INTERVAL_SEC)
+        # f.name is typed Optional by the SDK; a just-uploaded file always has one, but
+        # asserting it narrows the type for files.get and fails loudly if that ever changes.
+        assert f.name, f"uploaded file for {path.name} has no name to poll with"
         f = client.files.get(name=f.name)
     if f.state != types.FileState.ACTIVE:
         raise RuntimeError(f"file {path.name} ended in state {f.state}: {f.error}")
@@ -136,12 +114,18 @@ def generate_with_retry(
                     "output_tokens": resp.usage_metadata.candidates_token_count,
                     "total_tokens": resp.usage_metadata.total_token_count,
                 }
+            # resp.text is typed Optional (e.g. a response made of only non-text parts would
+            # leave it None) -- treat that as this call's own failure, not a crash, same as
+            # a JSON parse failure below.
+            if resp.text is None:
+                return None, "model returned no text", usage, round(time.time() - t0, 2)
             parsed = json.loads(resp.text)
             return parsed, None, usage, round(time.time() - t0, 2)
         except json.JSONDecodeError as e:
+            raw = resp.text[:300] if resp.text is not None else "(no text)"
             return (
                 None,
-                f"json decode error: {e}; raw={resp.text[:300]!r}",
+                f"json decode error: {e}; raw={raw!r}",
                 {},
                 round(time.time() - t0, 2),
             )
@@ -217,6 +201,9 @@ def main():
                     # to leave personal media sitting in a vendor's file store
                     # longer than the single call that needed it.
                     for f in uploaded:
+                        if f.name is None:
+                            continue  # nothing to delete by, though upload_and_wait asserts
+                            # this never happens for a file that reached ACTIVE state
                         try:
                             client.files.delete(name=f.name)
                         except Exception:

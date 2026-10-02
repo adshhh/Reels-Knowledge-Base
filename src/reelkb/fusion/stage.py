@@ -1,32 +1,9 @@
 """The fusion stage (M5): caption + OCR + transcript -> model -> fidelity gate -> `fusion` row.
-
-For every item that has both an `ocr_runs` row and a `transcripts` row but no `fusion` row
-yet, this stage builds a prompt, calls a `FusionModelClient`, parses its JSON, runs the
-fidelity gate (`reelkb.fusion.fidelity.gate`), and writes the result through
-`connect_stage(db, "fusion")` — so the database itself refuses any write outside the `fusion`
-table (AC-3.3), and the write-once trigger on `ocr_verbatim` means fusion cannot touch it even
-by accident.
-
-Resumable and idempotent: each item is looked up fresh from `fusion` before being processed
-(the "no fusion row yet" join), and each row is committed as soon as it's written, so killing
-the stage mid-run and restarting it only redoes unfinished items (AC-8.1's pattern, applied
-here).
-
-Items with zero non-empty channels (no caption, no OCR text, no transcript) get **no** fusion
-row at all — there would be nothing for the model to work from, and a written cost for an
-empty result would sit in the database as a null-content fusion row. They are counted in
-`RunSummary.skipped_empty` and reported, not silently dropped.
-
-**OCR-only vs OCR+caption — the trade-off (owner decision, not made here).** AC-3.1 is written
-against "that reel's OCR output" only, so `allowed_sources="ocr_only"` is the default and what
-`__main__.py` runs unless told otherwise. `allowed_sources="ocr_and_caption"` is implemented
-(`fidelity.gate` accepts it) but never the default. Under the strict default, a title that is
-only *spoken* in the caption text and never appears on screen is dropped by the gate even
-though the caption is right there in the prompt — captions are read by the model as context,
-but not as a verification source. Under `ocr_and_caption`, that same title survives, at the
-cost of trusting the caption's honesty the same way OCR's verbatim reading is trusted, which
-is a materially different guarantee (a caption can lie by omission or embellishment per D3;
-OCR just reads pixels). See the milestone report for the recommendation.
+For every item with OCR and a transcript but no `fusion` row yet: builds a prompt, calls a
+`FusionModelClient`, parses its JSON, runs `fidelity.gate`, writes through
+`connect_stage(db, "fusion")` (AC-3.3). Resumable and idempotent (AC-8.1): each row commits
+as written. Zero-channel items get no row at all, not a costed null one -- see `run`'s
+docstring for the `allowed_sources` trade-off.
 """
 
 from __future__ import annotations
@@ -216,6 +193,14 @@ def run(
     ``client`` is anything satisfying `FusionModelClient` — a `GroqFusionClient` for a real
     run, or a fake in tests. ``log``, if given, is a callable(str) used to print per-item
     progress; defaults to nothing so tests stay quiet.
+
+    ``allowed_sources="ocr_only"`` is the default, matching AC-3.1 as written ("absent from
+    that reel's OCR output"): a title only ever *spoken* in the caption and never shown on
+    screen is dropped by the gate, even though the caption is in the prompt as context, not
+    as a verification source. ``"ocr_and_caption"`` is implemented but never the default — it
+    trusts the caption's honesty the same way OCR's verbatim reading is trusted, a materially
+    weaker guarantee (a caption can lie by omission or embellishment, D3), and is an owner
+    decision to opt into, not one to drift into. See the M0 findings for the recommendation.
     """
     summary = RunSummary()
     printer = log if callable(log) else (lambda _msg: None)

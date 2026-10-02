@@ -1,10 +1,7 @@
-"""CLI entry point: ``python -m reelkb.ingest <path to message_1.json> [--db data/kb.db]``.
-
-Loads the export, parses it with :mod:`reelkb.ingest.parser` (pure, no I/O), then upserts
-the result into the ``items`` table it owns. Upserting on ``item_id`` (rather than deleting
-and reinserting) is what makes a re-run idempotent without violating the foreign keys that
-later stages (``fetch_status`` etc.) put on ``items.item_id`` — a delete-then-reinsert would
-either cascade-fail once downstream tables have rows, or silently orphan them.
+"""CLI entry point: `python -m reelkb.ingest <path to message_1.json> [--db data/kb.db]`.
+Loads the export, parses with `parser` (pure, no I/O), then upserts into the `items` table it
+owns. Upserting on `item_id`, not delete-then-reinsert, is what keeps a re-run idempotent
+without violating the foreign keys later stages (`fetch_status` etc.) put on `items.item_id`.
 """
 
 from __future__ import annotations

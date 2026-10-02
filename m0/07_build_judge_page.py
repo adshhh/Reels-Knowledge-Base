@@ -1,38 +1,8 @@
-"""M0 step 7 -- build the blind side-by-side judging page.
-
-Reads sample.jsonl + pipeline1.jsonl + pipeline2.jsonl and produces:
-
-  data/m0/judge.html      -- self-contained (inline CSS/JS, no external
-                              resources/CDNs/fonts). Opened directly from
-                              disk (file://) by the owner. For each of the
-                              50 items: 3 sampled frames, caption, OCR text,
-                              transcript, and both pipelines' fusion output,
-                              labelled "Output X" / "Output Y" -- WHICH
-                              pipeline made which is randomised per item and
-                              NOT present anywhere in this file's source, so
-                              opening dev tools can't de-blind it.
-  data/m0/judge_key.json  -- {shortcode: {"X": "pipeline1"|"pipeline2",
-                              "Y": "..."}}, the only place the mapping is
-                              recorded. Kept separate so it never has to
-                              ship to the browser.
-
-Why data is embedded inline rather than fetched: a page opened via file://
-cannot reliably fetch() a sibling JSON file (Chrome blocks XHR/fetch of
-local files by default) -- but <img src="relative/path.jpg"> from a
-file://-opened page works fine, so frames stay as relative-path <img> tags
-and everything else (captions, OCR, transcript, both outputs) is embedded
-as a JSON blob in a <script> tag instead.
-
-The owner's judgements are never sent anywhere; the page's Save button
-serialises them to JSON and triggers a normal browser download, which the
-owner then saves as data/m0/judgements.json himself (§7: "the owner
-produces these; they cannot be AI-generated" -- this page assists the
-judging, it does not do it).
-
-The page also autosaves progress to localStorage as a convenience (so
-closing the tab mid-way through 50 items doesn't lose work) -- purely a
-per-browser convenience, never read by anything outside the browser, and
-the Save button is still required to actually produce judgements.json.
+"""M0 step 7 -- build the blind side-by-side judging page. Reads the three M0 jsonl files,
+writes `data/m0/judge.html` (self-contained, opened via file://; see inline comments for why
+data is embedded) and `judge_key.json` (the only place the X/Y pipeline mapping lives, kept
+out of the page so dev tools can't de-blind it). Save downloads `judgements.json`; nothing
+here ever sends a judgement anywhere.
 """
 
 import json
@@ -222,7 +192,13 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 </footer>
 
 <script>
+// A page opened via file:// can't reliably fetch() a sibling JSON file (Chrome blocks
+// XHR/fetch of local files by default) -- but <img src="relative/path.jpg"> works fine, so
+// frames stay as <img> tags and everything else is embedded inline as JSON instead.
 const ITEMS = __ITEMS_JSON__;
+// Autosaves progress here so closing the tab mid-way through 50 items doesn't lose work --
+// a same-browser convenience only, never read outside it; Save is still required for
+// judgements.json to actually exist.
 const STORAGE_KEY = "m0_judgements_v1";
 
 let judgements = {{}};

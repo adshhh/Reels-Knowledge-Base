@@ -1,12 +1,7 @@
-"""Provenance on the card, and the unverified-name badge.
-
-Provenance (owner's request): the original reel/post link, the account that sent it and the
-date all sit together directly under the title, before the summary, so a card can always be
-traced back to the thing it came from. None of it costs anything extra -- all three fields
-come from the Instagram export the parser already reads, not from the fetch vendor.
-
-The badge surfaces names the fidelity gate could not confirm against on-screen text. The gate
-records them rather than deleting them (DESIGN_RATIONALE #11), so the card must say so.
+"""Provenance on the card, and the unverified-name badge. Provenance (owner's request): the
+original link, sending account and date sit under the title, before the summary -- all three
+come free from the Instagram export already parsed, not the fetch vendor. The badge surfaces
+names the fidelity gate flagged rather than deleted (DESIGN_RATIONALE #11).
 """
 
 from __future__ import annotations

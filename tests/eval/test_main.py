@@ -1,15 +1,8 @@
-"""``python -m reelkb.eval`` (AC-7.1): the CLI end to end, on the fake corpus.
-
-Two things AC-7.1 explicitly asks to be proven, both here:
-
-- the eval passes when everything lines up (a fully synthetic, fake-encoder corpus standing
-  in for the real fixtures), and
-- it exits non-zero, with the failure visible in the printed output, when the classifier is
-  deliberately degraded.
-
-Every other early-exit path (missing fixtures, missing database, missing local lookup,
-missing embeddings) gets its own small test, because each one is a distinct way a fresh
-checkout or a half-finished pipeline run should fail loudly rather than crash or lie.
+"""``python -m reelkb.eval`` (AC-7.1): the CLI end to end, on the fake corpus. Proves both
+halves AC-7.1 asks for -- passes when everything lines up, exits non-zero with the failure
+visible when the classifier is deliberately degraded -- plus one small test per early-exit
+path (missing fixtures, database, lookup, embeddings), since each is a distinct way a fresh
+checkout should fail loudly rather than crash or lie.
 """
 
 from __future__ import annotations

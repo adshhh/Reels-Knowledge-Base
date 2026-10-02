@@ -1,13 +1,8 @@
-"""The owner's hand edits: hide, edit and recategorise (D15, §4.5).
-
-Stored as two append-only JSON-lines files next to the database, never inside it:
-
-- ``curation.jsonl``: ``{"action": "hide" | "unhide", "item_id": ...}`` and
-  ``{"action": "edit", "item_id": ..., "field": "title" | "summary", "value": ...}``
-- ``corrections.jsonl``: ``{"item_id": ..., "category_id": ...}``
-
-Later lines win. No pipeline stage ever writes these files, so a re-run cannot undo them;
-they are laid over the database whenever cards are read (see cards.py).
+"""The owner's hand edits: hide, edit and recategorise (D15, §4.5). Stored as two append-only
+JSON-lines files next to the database, never inside it -- `curation.jsonl` (hide/unhide/edit
+events) and `corrections.jsonl` (category_id overrides). Later lines win. No pipeline stage
+ever writes these, so a re-run can't undo them; they're laid over the database whenever
+cards are read (`cards.py`).
 """
 
 from __future__ import annotations

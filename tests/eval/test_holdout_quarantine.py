@@ -1,15 +1,8 @@
-"""AC-7.2: holdout items are quarantined -- never used as prompt examples (§7).
-
-Two things are proven, deliberately kept separate:
-
-1. The checking machinery itself catches a leak, and clears a clean tree, on synthetic data.
-   These tests always run -- they can't be skipped away by an empty environment -- so a
-   regression in the checker is caught regardless of whether real fixtures exist anywhere.
-2. The real check: this repo's actual holdout fixture (if it exists on this machine) against
-   this repo's actual prompt files. Skipped, not failed, when the fixture or the local lookup
-   table is absent -- both are local-only, un-committed data (§7), so a fresh checkout or CI
-   legitimately has neither, and "no data to check" must never look like "check passed" or
-   "check failed".
+"""AC-7.2: holdout items are quarantined -- never used as prompt examples (§7). Proves two
+things separately: the checking machinery itself catches a leak and clears a clean tree on
+synthetic data (always runs, can't be skipped away); and the real check, this repo's actual
+holdout fixture against its actual prompt files, skipped (not failed) when the fixture or
+local lookup is absent, since both are legitimately uncommitted on a fresh checkout or CI.
 """
 
 from __future__ import annotations

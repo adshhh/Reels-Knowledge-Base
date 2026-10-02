@@ -1,15 +1,8 @@
-"""The two holes the M5 checker found in the fidelity gate, and the rules that close them.
-
-Both were open while all 85 fusion tests were green, because every planted fake in
-``test_fidelity_gate.py`` is at least 12 characters long -- above the length band where the
-old matching collapsed. These tests deliberately live in that band.
-
-Hole 1: short invented entities passed. Measured by the checker against a realistic OCR
-payload: 100% of random 2- and 3-letter invented titles kept, 66% of 4-letter ones. "Dune",
-"Coco", "Up", "Her" are what this archive is full of.
-
-Hole 2: proper nouns in the card's prose were never checked at all, so a name thrown out of
-the entity list could still be the card's headline.
+"""Two holes the M5 checker found in the fidelity gate, invisible while all 85 fusion tests
+were green since every fake in `test_fidelity_gate.py` is 12+ characters, above the length
+band where matching collapsed. **Short entities**: 100% of random 2-3 letter invented titles
+passed, 66% of 4-letter ones ("Dune", "Coco", "Up" are this archive's content). **Prose**:
+proper nouns in the card's summary/bullets were never checked against OCR at all.
 """
 
 from __future__ import annotations

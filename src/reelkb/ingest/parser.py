@@ -1,24 +1,7 @@
-"""Pure parsing logic for ``message_1.json`` (no I/O, no database — easy to unit test).
-
-The export is a Meta "Download Your Information" DM thread. Each message is one of:
-
-* a **share** — a link the owner sent himself, with an optional caption (``share_text``)
-  and source account (``original_content_owner``). Shares split into:
-    - a `/reel/<code>` or `/p/<code>` Instagram link  -> kind ``reel`` / ``post``
-    - anything else (another site, or an Instagram profile share) -> kind ``external``
-* an **attachment** — Messenger's own "X sent an attachment." text, with no ``share`` key
-  and no recoverable link or caption.
-* a **note** — typed text with no ``share`` key that is not the attachment placeholder.
-
-Two encoding facts about the raw file drive the design:
-
-1. The export is mojibake: real UTF-8 bytes were read back as Latin-1, so every string
-   needs ``s.encode("latin-1").decode("utf-8")`` to come out clean. See :func:`fix_mojibake`.
-2. Messages are stored newest-first (verified against the real export: strictly descending
-   ``timestamp_ms``, zero collisions). Parsing sorts them oldest-first before deduplicating,
-   so "the earliest message wins" and "the first non-empty caption/account" are the *same*
-   scan direction instead of two different tie-break rules (an independent decision — see
-   the M2 checkpoint report).
+"""Pure parsing logic for `message_1.json` (no I/O, no database -- easy to unit test). The
+export is a Meta "Download Your Information" DM thread; each message is a **share** (a link,
+split into `reel`/`post`/`external` by URL shape), Messenger's **attachment** placeholder, or
+a typed **note**. Also mojibake (`fix_mojibake`) and newest-first -- see `parse_messages`.
 """
 
 from __future__ import annotations
@@ -148,9 +131,11 @@ def iso_utc(ms: int) -> str:
 def parse_messages(messages: list[dict[str, Any]]) -> tuple[list[ParsedItem], ParseStats]:
     """Turn the export's ``messages`` list into deduplicated items ready for the database.
 
-    Messages are processed oldest-first (see module docstring) so that, for a shortcode
-    shared more than once, the earliest occurrence sets ``sent_at`` and the first non-empty
-    caption/account encountered while scanning forward is kept — one rule, one direction.
+    The export stores messages newest-first (verified against the real export: strictly
+    descending ``timestamp_ms``, zero collisions). Sorted oldest-first here, so that for a
+    shortcode shared more than once, the earliest occurrence sets ``sent_at`` and the first
+    non-empty caption/account seen while scanning forward is kept — one rule, one direction,
+    rather than two different tie-breaks (an independent decision, see the M2 checkpoint).
     """
     stats = ParseStats()
     by_id: dict[str, ParsedItem] = {}

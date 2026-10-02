@@ -110,6 +110,20 @@ misses**; never relax a target to fit a result.
 Prefer running code over reading it. Reading tells you what was intended; running tells you
 what happens.
 
+## File descriptions: 5–6 lines, maximum
+
+Every file's top-level description — a Python module docstring, a shell script's header
+comment — explains what the file is and does in **5–6 lines, never more**. State the job
+plainly; don't justify it there.
+
+Design rationale, history of a bug it fixes, and the reasoning behind a non-obvious choice
+still belong in the codebase — they just don't belong in the file-level description. Put them
+in `docs/DESIGN_RATIONALE.md` (or `docs/decisions/` for a LOCKED-decision change) and link to
+it, or as an inline comment at the exact line it explains. A description that has grown past
+6 lines is usually several of these mixed together; split it rather than trim it blind.
+
+This applies going forward to every file written from here on.
+
 ## Decide vs. ask
 
 Decide independently: naming, file structure, small visual details — note these in the

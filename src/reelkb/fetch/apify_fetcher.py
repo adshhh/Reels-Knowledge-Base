@@ -1,18 +1,8 @@
-"""ApifyFetcher -- the memo23/instagram-video-downloader actor verified in M0.
-
-``m0/02_fetch_apify.py`` is where the actor id, input schema and pricing were confirmed by
-calling the Apify API directly (2026-09-19), and where a real constraint was discovered by
-running, not documented anywhere: on a **non-paying** Apify account, the actor caps each run
-at 5 billable events, and one post typically costs 4 of them (start + dataset-item + video +
-cover) -- so a multi-item ``posts`` array silently truncates to ~1 item processed. The
-workaround is one actor call per item.
-
-``batch_size`` (from ``--batch-size``, default 1) exists so that changes without touching this
-class: 1 keeps every run to a single item (safe for a non-paying account); a paid account can
-raise it so more shortcodes ride in one actor call's ``posts`` array. Real network calls only
-happen inside :meth:`ApifyFetcher.fetch`, and ``apify_client`` is imported there, not at
-module level, so importing this module (e.g. for the CLI's ``--via`` dispatch) never trips the
-unit-test import guard (AC-6.2).
+"""ApifyFetcher -- the memo23/instagram-video-downloader actor verified in M0
+(`m0/02_fetch_apify.py`, actor id, input schema and pricing confirmed 2026-09-19). See
+`__init__` for why `batch_size` defaults to 1. `apify_client` is imported lazily inside
+`fetch`, not at module level, so importing this module for the CLI's `--via` dispatch never
+trips the unit-test import guard (AC-6.2).
 """
 
 from __future__ import annotations
@@ -29,6 +19,9 @@ ACTOR_ID = "piwPghZZql1jcdYcH"
 
 class ApifyFetcher:
     def __init__(self, batch_size: int = 1, token: str | None = None) -> None:
+        # Default 1: a non-paying Apify account caps each run at 5 billable events and a
+        # post typically costs 4, so a multi-item `posts` array silently truncates (see
+        # m0/02_fetch_apify.py and docs/M0_FINDINGS.md §3). A paid account can raise this.
         self.batch_size = max(1, batch_size)
         self.token = token or os.environ.get("APIFY_TOKEN")
 

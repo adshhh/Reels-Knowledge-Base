@@ -1,28 +1,8 @@
-"""M0 step 6 -- aggregate pipeline1 (local OCR+VAD+Whisper+Groq fusion) and
-pipeline2 (Gemini watches raw video/images) into one per-item results file,
-plus the automatic URL/handle/title fidelity check against OCR that the
-owner's manual judging (judge.html) doesn't need to redo.
-
-This does NOT compute corpus-wide projections (full-run cost, disk, time) --
-those are printed to stdout at the end for whoever writes
-docs/M0_FINDINGS.md to copy in as aggregates, since results.jsonl is one row
-per item, not a summary.
-
-Fidelity check (§3 AC-3.1's rule, applied here as a measurement, not a
-gate): a URL/@handle/title from a pipeline's output is counted as
-"grounded" if it is within edit distance 2 of at least one OCR string from
-that same item's pipeline1 OCR pass. This is checked identically for both
-pipelines' outputs against the SAME OCR text (pipeline1's), because OCR is
-the one channel we trust as ground truth (D7) regardless of which pipeline
-produced the claim. Titles are checked too but are expected to fail more
-often than URLs/handles even for a correct answer, since a film or course
-title legitimately can appear only in speech or in the video's visuals
-without ever being written on screen -- that's the whole reason pipeline 2
-exists to be compared. Read the counts with that caveat, not as a raw pass
-rate.
-
-Writes:
-  data/m0/results.jsonl -- one row per item (see build_row())
+"""M0 step 6 -- aggregate pipeline1 and pipeline2 into one per-item results file, plus the
+automatic URL/handle/title fidelity check against OCR (§3 AC-3.1's rule as a measurement, not
+a gate -- see `grounded_in_ocr`), checking both pipelines against pipeline1's OCR text, the
+one channel trusted as ground truth (D7). Writes `data/m0/results.jsonl` (`build_row`);
+corpus-wide projections print to stdout for `docs/M0_FINDINGS.md`, not stored here.
 """
 
 import json

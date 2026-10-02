@@ -1,17 +1,9 @@
-"""Hashed document IDs shared between the labelling page and the eval harness (§7).
-
-The two fixture files (`eval/holdout_v1.jsonl`, `eval/queries_v1.jsonl`) are committed to a
-public repository, so real item ids never appear in them. Instead every item is referred to
-by a **hashed id** (``hid``): ``hmac_sha256(salt, item_id).hexdigest()[:16]``. The salt lives
-at ``data/eval_salt`` -- 32 random bytes, created on first use and never committed (see
-``.gitignore``: all of ``data/`` is local only). A local lookup table,
-``data/eval_lookup.json``, maps ``hid -> item_id`` so the owner (and this eval harness) can
-resolve a hash back to a real record without the hash-to-item mapping ever leaving the
-machine.
-
-Both the labelling page (builder F, writes ``holdout_v1.jsonl`` / ``queries_v1.jsonl`` plus
-the lookup) and this eval harness (reads them) import this module, so the id scheme is
-defined in exactly one place.
+"""Hashed document IDs shared between the labelling page and the eval harness (§7). The
+fixture files are committed to a public repo, so real item ids never appear in them --
+instead every item is a ``hid``: ``hmac_sha256(salt, item_id).hexdigest()[:16]``. The salt
+(``data/eval_salt``) and the ``hid -> item_id`` lookup (``data/eval_lookup.json``) are both
+local-only, never committed. One module, imported by both the labelling page and this
+harness, so the id scheme is defined in exactly one place.
 """
 
 from __future__ import annotations

@@ -1,10 +1,7 @@
-"""The pre-commit guard refuses personal data (Verification step 3).
-
-A fake ``git`` on PATH plays the part of the repository, so this runs the real hook script
-without touching any real repository. The end-to-end check (a real commit being refused) is
-run by the owner, because the agent never runs git.
-
-.githooks/ is gitignored by the owner's choice, so on CI (a fresh clone) this is skipped.
+"""The pre-commit guard refuses personal data (Verification step 3). A fake ``git`` on PATH
+plays the part of the repository, so this runs the real hook script without touching a real
+one; the end-to-end check (a real commit refused) is run by the owner, since the agent never
+runs git. Skipped only where `.githooks/pre-commit` is absent.
 """
 
 import os

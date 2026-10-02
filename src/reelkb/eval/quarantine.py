@@ -1,15 +1,8 @@
-"""AC-7.2: no holdout item_id may ever appear in a prompt file (§7).
-
-The holdout set exists so classification quality can be measured honestly. If a holdout
-item's real id ever leaked into a prompt template or a few-shot example, the model could
-effectively memorise the answer, and the AC-4.1 measurement would become self-congratulatory
-rather than a real test. This module is the checking machinery; ``run_search_eval`` /
-``run_classification_eval`` never touch prompt files at all, so this lives on its own.
-
-A "prompt file" is any file that sits inside a directory named ``prompts`` anywhere under a
-source root (e.g. ``src/reelkb/fusion/prompts/system.txt``) -- every pipeline stage that talks
-to a model keeps its templates in exactly one such directory (see ``src/reelkb/fusion/prompts/``
-for the existing example), so this doesn't need per-stage configuration.
+"""AC-7.2: no holdout item_id may ever appear in a prompt file (§7). If one leaked into a
+template or few-shot example, the model could memorise the answer and AC-4.1 would stop being
+a real test. A "prompt file" is any file under a directory named ``prompts`` anywhere under a
+source root (e.g. `src/reelkb/fusion/prompts/system.txt`) -- every model-calling stage keeps
+templates there, so this needs no per-stage configuration.
 """
 
 from __future__ import annotations

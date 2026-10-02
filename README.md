@@ -26,12 +26,15 @@ stunning, I loved it & so did Kuma"* — the film is **Flow**, a word appearing 
 screen. No amount of clever matching finds a name that was never written down, so the content
 has to be recovered from pixels and audio.
 
-Hence the central rule: **OCR reads and the language model interprets.**
-Vision-language models score ~45% F1 on non-semantic text like URLs and handles, where humans
-score 97%. OCR fails loudly and filterably (`c0urser@.0rg` is obviously broken); a model fails 
-silently, handing you a URL wrong by one word. So verbatim OCR output is written by exactly 
-one stage and immutable after, enforced by a database trigger rather than discipline, and every 
-entity a model emits is checked back against what was actually on screen before it reaches a card.
+The plan started from a strict rule: **OCR reads, the language model only interprets** —
+because vision-language models score ~45% F1 on URLs and handles where humans score 97%, and a
+model fails silently, handing you a URL wrong by one word. Then I tested it. In a blind
+bake-off on 50 deliberately hard reels, a model watching the whole video beat the
+OCR-then-interpret pipeline 31 to 5, mostly by naming films correctly and understanding what
+the reel showed — and it got a link wrong on only 2 of 50. So the rule changed: the model
+watches the reel, with the OCR text handed to it so it can recover small print it missed.
+OCR's output is still stored verbatim and immutable, enforced by a database trigger, and links
+the model gives are still checked against what was on screen.
 
 ---
 
@@ -46,12 +49,11 @@ export → parse → fetch media → OCR + speech → fusion → embeddings
          browse + search UI ← classification ← taxonomy discovery
 ```
 
-Two stages carry most of the risk. **Verbatim** runs Apple Vision OCR for on-screen text and
-gates speech-to-text behind voice-activity detection, so a music-only reel yields an empty
-transcript instead of an invented one. **Fusion** has a model combine caption, OCR and
-transcript into a title and summary (a fidelity gate discards anything the on-screen
-text doesn't corroborate). Search is hybrid: dense embeddings for meaning, sparse lexical
-matching for exact terms, fused into one ranking.
+Two stages carry most of the risk. **Verbatim** runs Apple Vision OCR locally and stores
+exactly what it read, untouchable by any later stage. **Fusion** has Gemini watch the reel,
+with the caption and OCR text alongside, and write the title, summary and entities; a fidelity
+gate then flags any link or name the on-screen text doesn't corroborate. Search is hybrid:
+dense embeddings for meaning, sparse lexical matching for exact terms, fused into one ranking.
 
 Work runs in three waves: the foundation (data contract, commit guards, CI, and a bake-off on
 50 real reels to pick the extraction models), then everything buildable against fake data in

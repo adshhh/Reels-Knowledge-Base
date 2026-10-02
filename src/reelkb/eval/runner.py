@@ -1,15 +1,8 @@
-"""The evaluation logic behind ``python -m reelkb.eval`` (AC-7.1), split from ``__main__.py``
-so every threshold check is directly unit-testable without going through a subprocess.
-
-Two independent evaluations, matching the two locked plan sections:
-
-- ``run_classification_eval`` -- AC-4.1 / AC-CAT (§4), against ``classification`` in the
-  database.
-- ``run_search_eval`` -- AC-5.1 / AC-5.2 / AC-SEARCH (§5), against a live ``Searcher``.
-
-Both return a list of ``Threshold`` (name, measured value, PASS/FAIL) plus whatever
-qid-level detail AC-7.1 asks the CLI to print. Neither one ever touches item content in its
-output -- only category ids (which are taxonomy labels, not archive content) and qids.
+"""The evaluation logic behind ``python -m reelkb.eval`` (AC-7.1), split from `__main__.py`
+so every threshold check is directly unit-testable. Two independent evaluations:
+`run_classification_eval` (AC-4.1/AC-CAT, §4) and `run_search_eval` (AC-5.1/5.2/AC-SEARCH,
+§5), each returning `Threshold` results plus qid-level detail. Neither ever outputs item
+content -- only category ids and qids.
 """
 
 from __future__ import annotations

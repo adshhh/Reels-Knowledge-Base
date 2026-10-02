@@ -1,15 +1,8 @@
-"""Proof for AC-2.1 and AC-2.3 (docs/PLAN.md §2), the M2 acceptance criteria.
-
-Two layers, per the M2 build spec:
-
-1. Unit tests against a small synthetic export built right here -- covers mojibake,
-   dedupe, every ``kind``, and idempotency. No file, no network, no model: runs everywhere,
-   including CI.
-2. Tests against the real ``data/raw/message_1.json`` asserting the exact locked counts.
-   Skipped with a clear reason when that file is absent (e.g. in CI, where the archive is
-   never present -- it's gitignored, see docs/CONTRACT.md). These assert counts and
-   invariants ONLY: no caption, URL or account from the real archive is ever printed or
-   compared against a literal value.
+"""Proof for AC-2.1 and AC-2.3 (docs/PLAN.md §2). Two layers: unit tests against a small
+synthetic export built here (mojibake, dedupe, every `kind`, idempotency -- runs everywhere,
+including CI), plus tests against the real, gitignored `data/raw/message_1.json` asserting
+only locked counts and invariants -- never a caption, URL or account literal -- skipped with
+a clear reason when that file is absent.
 """
 
 from __future__ import annotations

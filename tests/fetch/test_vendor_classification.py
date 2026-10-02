@@ -1,17 +1,8 @@
-"""Which vendor responses may become terminal, and which may not (AC-2.2).
-
-This is the decision that cannot be taken back. `dead` is terminal and never retried, so a
-response wrongly classified `dead` permanently burns a live reel in the one real bulk run
-this project gets -- and afterwards it is indistinguishable from a genuinely deleted post.
-The safe direction is always `transient`: an item wrongly left pending costs one retry.
-
-The M3 checker found both halves of this wrong and untested at once: Apify turned a
-structurally-empty dataset row into `dead` (against types.py's own docstring, which names
-that case as the textbook transient), and yt-dlp could not produce `dead` at all, so no item
-could ever reach a terminal state through it.
-
-No network, no yt_dlp import: both functions under test are pure, and take the vendor's
-response as a plain dict or string.
+"""Which vendor responses may become terminal, and which may not (AC-2.2). `dead` is terminal
+and never retried, so a wrongly-classified response permanently burns a live reel in the
+one real bulk run this project gets; the safe direction is always `transient` (costs a
+retry). The M3 checker found both vendors wrong here at once -- Apify turning an
+empty row into `dead`, yt-dlp never producing `dead` at all. Pure functions, no network.
 """
 
 from __future__ import annotations
